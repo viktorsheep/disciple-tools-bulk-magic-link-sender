@@ -1,13 +1,13 @@
 <?php
 /**
- * Plugin Name: Disciple Tools - Magic Links
- * Plugin URI: https://github.com/DiscipleTools/disciple-tools-bulk-magic-link-sender
+ * Plugin Name: Ekballo Disciple Tools - Magic Links
+ * Plugin URI: https://github.com/viktorsheep/ekballo-disciple-tools-bulk-magic-link-sender
  * Description: Disciple Tools - Magic Links for users, contacts, groups and teams assignment + schedule management for magic links dispatching over configured sending channels.
- * Text Domain: disciple-tools-bulk-magic-link-sender
+ * Text Domain: ekballo-disciple-tools-bulk-magic-link-sender
  * Domain Path: /languages
- * Version:  1.8.2
- * Author URI: https://github.com/DiscipleTools
- * GitHub Plugin URI: https://github.com/DiscipleTools/disciple-tools-bulk-magic-link-sender
+ * Version:  1.8.3
+ * Author URI: https://github.com/viktorsheep
+ * GitHub Plugin URI: https://github.com/viktorsheep/ekballo-disciple-tools-bulk-magic-link-sender
  * Requires at least: 4.7.0
  * (Requires 4.7+ because of the integration of the REST API at 4.7 and the security requirements of this milestone version.)
  * Tested up to: 5.6
@@ -285,7 +285,7 @@ add_action( 'plugins_loaded', function () {
         }
         if ( class_exists( 'Puc_v4_Factory' ) ) {
             Puc_v4_Factory::buildUpdateChecker(
-                'https://raw.githubusercontent.com/DiscipleTools/disciple-tools-bulk-magic-link-sender/master/version-control.json',
+                'https://raw.githubusercontent.com/viktorsheep/ekballo-disciple-tools-bulk-magic-link-sender/master/version-control.json',
                 __FILE__,
                 'disciple-tools-bulk-magic-link-sender'
             );
