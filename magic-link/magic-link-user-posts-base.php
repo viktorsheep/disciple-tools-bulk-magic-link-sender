@@ -301,7 +301,17 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 'translations'   => [
                     'add' => __( 'Add Magic', 'disciple-tools-bulk-magic-link-sender' ),
                 ],
-                'submit_success_function' => Disciple_Tools_Bulk_Magic_Link_Sender_API::get_link_submission_success_js_code()
+                'submit_success_function' => Disciple_Tools_Bulk_Magic_Link_Sender_API::get_link_submission_success_js_code(),
+                'mapbox'        => [
+                    'map_key'        => DT_Mapbox_API::get_key(),
+                    'google_map_key' => Disciple_Tools_Google_Geocode_API::get_key(),
+                    'translations'   => [
+                            'search_location' => __( 'Search Location', 'disciple_tools' ),
+                            'delete_location' => __( 'Delete Location', 'disciple_tools' ),
+                            'use'             => __( 'Use', 'disciple_tools' ),
+                            'open_modal'      => __( 'Open Modal', 'disciple_tools' )
+                    ]
+                ],
             ] ) ?>][0];
 
             /**
