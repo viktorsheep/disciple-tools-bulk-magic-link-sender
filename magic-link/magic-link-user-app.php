@@ -304,6 +304,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
 
                         let html = `<tr onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">
                                 <td>${window.lodash.escape(v.name)}</td>
+                                <td style="width: 220px;">Last Modified : ${window.lodash.escape(v.name)}</td>
                             </tr>`;
 
                         table.find('tbody').append(html);
@@ -813,7 +814,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                 foreach ( $posts['posts'] ?? [] as $post ) {
                     $data['posts'][] = [
                         'id'   => $post['ID'],
-                        'name' => $post['name']
+                        'name' => $post['name'],
+                        'last_modified' => $post['last_modified']['formatted']
                     ];
                 }
             }
