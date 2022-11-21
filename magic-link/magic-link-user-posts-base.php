@@ -245,6 +245,73 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 text-align: center;
             }
 
+            /* Custom Map Preview : Nerdar */
+            #mapPreview {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                background: rgba(0,0,0,0.5);
+                z-index: 999999;
+                overflow: auto;
+                display: none;
+            }
+
+            #mapPreview.show {
+                display: block;
+            }
+
+            #mapPreview .content {
+                max-width: calc(100vw - 100px);
+                height: calc(100vh - 100px);
+                margin-top: 0px;
+                margin-left: 50px;
+                background: white;
+                opacity: 0;
+                border-radius: 20px;
+                padding: 20px;
+                padding-top: 10px;
+            }
+
+            #mapPreview.show .content {
+                opacity: 1;
+                margin-top: 50px;
+            }
+
+            #mapPreview .content .header {
+                height: 40px;
+            }
+
+            #mapPreview .content .header span {
+                display: inline-block;
+                height: 40px;
+                line-height: 40px;
+            }
+            #mapPreview .content .header button {
+                float: right;
+                height: 40px;
+                width: 45px;
+                opacity: .2;
+                font-size: 20px;
+            }
+
+            #mapPreview .content .header button:hover {
+                opacity: 1;
+            }
+
+            #mapPreview .content .body .wrap-map {
+                height: calc(100vh - 180px);
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            #mapPreview .content .body .wrap-map #mpMap {
+                height: 100%;
+            }
+
+            /* e.o Custom Map Preview : Nerdar */
+
             .api-content-div-style {
                 height: 300px;
                 overflow-x: hidden;
@@ -611,15 +678,34 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                              */
 
                             jQuery(tr).find('.open-mapping-grid-modal').on('click', evt => {
-                                let grid_meta_id = jQuery(evt.currentTarget).data('id');
-                                let post_location_grid_meta = jsObject['post']['location_grid_meta'];
+                                let mapPreview = jQuery('#mapPreview')
+                                mapPreview.addClass('show')
+                                let grid_meta_id = jQuery(evt.currentTarget).data('id')
+                                let post_location_grid_meta = jsObject['post']['location_grid_meta']
 
                                 if (post_location_grid_meta !== undefined && post_location_grid_meta.length !== 0) {
-                                    jQuery.each(post_location_grid_meta, function (i, v) {
-                                        if (String(grid_meta_id) === String(v.grid_meta_id)) {
-                                            return load_modal(v.lng, v.lat, v.level, v.label, v.grid_id);
-                                        }
-                                    });
+                                    const gridData = post_location_grid_meta.find(lg => lg.grid_meta_id === grid_meta_id.toString())
+                                    mapPreview.find('.content .header .title').empty().append(gridData.label)
+
+                                    // set zoom
+                                    let zoom = 15
+
+                                    if(gridData.level === 'admin0') { zoom = 3 }
+                                    else if(gridData.level === 'admin1') { zoom = 6 }
+                                    else if(gridData.level === 'admin2') { zoom = 10 }
+
+                                    mapPreview.find('.content .body').find('#mpMap').empty()
+
+                                    mapboxgl.accessToken = dtMapbox.map_key
+                                    const map = new mapboxgl.Map({
+                                            container: 'mpMap',
+                                            style: 'mapbox://styles/mapbox/streets-v11',
+                                            center: [gridData.lng, gridData.lat],
+                                            minZoom: 1,
+                                            zoom: zoom
+                                    })
+
+                                    const marker = new mapboxgl.Marker().setLngLat([gridData.lng,gridData.lat]).addTo(map)
                                 }
                             });
 
@@ -883,6 +969,21 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
             $logo_url = $custom_logo_url;
         }
         ?>
+        <!-- Custom Map : Ekballo -->
+        <div id="mapPreview">
+            <div class="content">
+                <div class="header">
+                    <span class="title"></span>
+                    <button type="button" class="btn-close" onclick="jQuery('#mapPreview').removeClass('show')">&times;<button>
+                </div>
+                <div class="body">
+                    <div class="wrap-map">
+                        <div id="mpMap"></div>
+                    </div>
+                </div>
+            </div>
+        </div> <!-- e.o Custom Map : Ekballo -->
+
         <div id="custom-style"></div>
         <div id="wrapper">
             <header>
