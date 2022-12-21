@@ -1301,7 +1301,8 @@ Thanks!';
                 close: true,
                 gravity: "bottom",
                 callback: function() {
-                    window.location.reload();
+                    //window.location.reload();
+                    window.get_magic();
                 }
 
             }).showToast();

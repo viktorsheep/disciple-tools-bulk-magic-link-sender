@@ -260,27 +260,44 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             /**
              * Fetch assigned contacts
              */
-            window.get_magic = () => {
+            window.get_magic = (searchWord = '') => {
+              
+                const payload = {
+                    action: 'get',
+                    parts: jsObject.parts
+                }
+
+                if(searchWord.length > 0) {
+                    payload.search = searchWord
+                }
+
                 jQuery.ajax({
                     type: "GET",
                     data: {
-                        action: 'get',
-                        parts: jsObject.parts
+                      ...payload
+                        //action: 'get',
+                        //parts: jsObject.parts
                     },
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
                     url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type,
                     beforeSend: function (xhr) {
                         xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
+
+                        $('.api-content-table').hide()
+                        $('#apiContentLoader').show()
                     }
+                }).done(function (data) {
+                    $('.api-content-table').show()
+                    $('#apiContentLoader').hide()
+
+                    window.load_magic(data)
+                }).fail(function (e) {
+                    console.log(e)
+                    jQuery('#error').html(e)
+                    $('.api-content-table').show()
+                    $('#apiContentLoader').hide()
                 })
-                    .done(function (data) {
-                        window.load_magic(data)
-                    })
-                    .fail(function (e) {
-                        console.log(e)
-                        jQuery('#error').html(e)
-                    })
             };
 
             /**
@@ -301,14 +318,12 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                 // Iterate over returned posts
                 if (data['posts']) {
                     data['posts'].forEach(v => {
+                      let html = `<tr onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">
+                        <td>${window.lodash.escape(v.name)}</td>
+                        <td style="width: 220px;">${window.lodash.escape(v.last_modified)}</td>
+                        </tr>`;
 
-                        let html = `<tr onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">
-                                <td>${window.lodash.escape(v.name)}</td>
-                                <td style="width: 220px;">Last Modified : ${window.lodash.escape(v.name)}</td>
-                            </tr>`;
-
-                        table.find('tbody').append(html);
-
+                      table.find('tbody').append(html);
                     });
                 }
             };
@@ -319,7 +334,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             window.get_contact = (post_id) => {
                 let comment_count = 2;
 
-                jQuery('.form-content-table').fadeOut('fast', function () {
+                jQuery('.form-content-table').hide()
 
                     // Dispatch request call
                     jQuery.ajax({
@@ -473,7 +488,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                             }
 
                             // Display updated post fields
-                            jQuery('.form-content-table').fadeIn('fast');
+                            jQuery('.form-content-table').show();
 
                         } else {
                             // TODO: Error Msg...!
@@ -483,7 +498,6 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                         console.log(e);
                         jQuery('#error').html(e);
                     });
-                });
             };
 
             /**
@@ -619,6 +633,52 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                     });
                 }
             });
+
+            window.fns = {
+                search: {
+                    show() {
+                        $('#wrapSearchToggle')
+                        $('#wrapSearchInput')
+                        $('#spnSearch')
+                        $('#spnCancel')
+                        $('#txtSearch')
+
+                        if(this.d.shown) {
+                            $('#spnSearch').show()
+                            $('#spnCancel').hide()
+                            $('#wrapSearchInput').hide()
+
+                            if($('#txtSearch').val() !== '') {
+                                window.get_magic()
+                            }
+
+
+                            $('#txtSearch').val('')
+                            this.d.shown = false
+                        }
+                        else {
+                            $('#spnSearch').hide()
+                            $('#spnCancel').show()
+                            $('#wrapSearchInput').show()
+
+                            this.d.shown = true
+                        }
+                    },
+
+                    hide() {
+                    },
+
+                    d: {
+                        shown: false
+                    }
+                }
+            };
+
+            $('#txtSearch').on('keypress', function(e) {
+              if(e.which === 13) {
+                window.get_magic($('#txtSearch').val())
+              }
+            });
         </script>
         <?php
         return true;
@@ -638,13 +698,38 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             <hr>
             <div id="content">
                 <div id="assigned_contacts_div" style="display: none;">
-                    <h3><?php esc_html_e( "Contacts", 'disciple_tools' ) ?> [ <span id="total">0</span> ]</h3>
+                    <div>
+                        <div style="width: calc(100% - 37px); float:left; display: inline-block;">
+                            <h3><?php esc_html_e( "Contacts", 'disciple_tools' ) ?> [ <span id="total">0</span> ]</h3>
+                        </div>
+
+                        <!-- Search Toggle -->
+                        <div id="wrapSearchToggle" style="float:right; width: 36px; height: 36px; line-height: 36px; text-align: center;" onclick="fns.search.show()">
+                            <span id="spnSearch"><i class="fi-magnifying-glass" style="color: #777;"></i></span>
+                            <span id="spnCancel" style="display:none;"><i class="fi-x" style="color: red;"></i></span>
+                        </div>
+                        <div style="clear:both;"></div>
+                        <div id="wrapSearchInput" style="padding: 10px; display:none;">
+                            <input type="text" id="txtSearch" placeholder="Group name ..." />
+                        </div>
+                    </div>
                     <hr>
                     <div class="grid-x api-content-div-style" id="api-content">
                         <table class="api-content-table">
+                            <thead style="border: 0px solid transparent;">
+                                <tr style="border: 0px solid transparent; border-bottom: 1px solid #ddd;">
+                                    <td>Name</td>
+                                    <td width="150">Last Modified</td>
+                                </tr>
+                            </thead>
                             <tbody>
                             </tbody>
                         </table>
+
+                        <div id="apiContentLoader" style="position: absolute; top: 0; bottom: 0; left:0; right: 0; background: rgba(255,255,255,0.9); text-align: center; line-height: 300px;">
+                        	Updating
+                        </div>
+
                     </div>
                     <br>
                 </div>
@@ -786,8 +871,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             $original_user = wp_get_current_user();
             wp_set_current_user( $user_id );
 
-            // Fetch all assigned posts
-            $posts = DT_Posts::list_posts( 'contacts', [
+            $options = [
                 'limit'  => 1000,
                 'fields' => [
                     [
@@ -801,7 +885,14 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                         "active"
                     ]
                 ]
-            ] );
+            ];
+
+            if(isset($params['search'])) {
+                $options['text'] = $params['search'];
+            }
+
+            // Fetch all assigned posts
+            $posts = DT_Posts::list_posts( 'contacts', $options);
 
             // Revert to original user
             if ( ! empty( $original_user ) && isset( $original_user->ID ) ) {

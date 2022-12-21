@@ -103,6 +103,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
         add_action( 'wp_enqueue_scripts', [ $this, 'wp_enqueue_scripts' ], 100 );
         add_filter( 'script_loader_tag', [ $this, 'add_type_attribute' ], 10, 2 );
     }
+
     private function set_script_type_module( $script ) {
         $re = '/type=[\'"](.*?)[\'"]/m';
 
@@ -146,6 +147,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
         wp_enqueue_style( 'dtwc-light-css', plugin_dir_url( __FILE__ ) . $css_path, null, filemtime( plugin_dir_path( __FILE__ ) . $css_path ) );
         wp_enqueue_script( 'dtwc-' . $name, plugin_dir_url( __FILE__ ) . $path, null, filemtime( plugin_dir_path( __FILE__ ) . $path ) );
     }
+
     public function wp_enqueue_scripts() {
         // Support Geolocation APIs
         if ( DT_Mapbox_API::get_key() ) {
@@ -332,6 +334,10 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
             .api-content-table tr:hover {
                 background-color: #f5f5f5;
             }
+
+            /* Search */
+            
+            /* e.o Search */
         </style>
         <?php
     }
@@ -384,13 +390,21 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
             /**
              * Fetch assigned groups
              */
-            window.get_magic = () => {
+            window.get_magic = (searchWord = '') => {
+                const payload = {
+                  action: 'get',
+                  parts: jsObject.parts,
+                  lang: jsObject.lang
+                }
+
+                if(searchWord.length > 0) {
+                    payload.search = searchWord
+                }
+
                 jQuery.ajax({
                     type: "GET",
                     data: {
-                        action: 'get',
-                        parts: jsObject.parts,
-                        lang: jsObject.lang,
+                      ...payload
                     },
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
@@ -398,15 +412,20 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                     beforeSend: function (xhr) {
                         xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce);
                         xhr.setRequestHeader('Cache-Control', 'no-store');
+                        $('.api-content-table').hide()
+                        $('#apiContentLoader').show()
+                        jQuery('#post_name').html('');
                     }
+                }).done(function (data) {
+                    jQuery('#apiContentLoader').hide()
+                    jQuery('.api-content-table').show()
+                    window.load_magic(data)
+                }).fail(function (e) {
+                    console.log(e)
+                    jQuery('#error').html(e)
+                    $('#apiContentLoader').hide()
+                    $('.api-content-table').show()
                 })
-                    .done(function (data) {
-                        window.load_magic(data)
-                    })
-                    .fail(function (e) {
-                        console.log(e)
-                        jQuery('#error').html(e)
-                    })
             };
 
             /**
@@ -422,14 +441,14 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 // Set total hits count
                 total.html(data['total'] ? data['total'] : '0');
 
+                // Sort to Last Modified DESC
+                data.posts.sort((a, b) => ( a.last_modified.timestamp < b.last_modified.timestamp) ? 1 : -1)
+
                 // Iterate over returned posts
                 if (data['posts']) {
                     data['posts'].forEach(v => {
-
                         let html = window.format_post_row(v);
-
                         table.find('tbody').append(html);
-
                     });
                 }
             };
@@ -850,6 +869,9 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                         url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/update',
                         beforeSend: function (xhr) {
                             xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
+                            jQuery('.api-content-table').fadeOut('fast', function() {
+                                jQuery('#apiContentLoader').fadeIn('fast');
+                            });
                         }
 
                     }).done(function (data) {
@@ -857,7 +879,8 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                         // If successful, refresh page, otherwise; display error message
                         if (data['success']) {
                             Function(jsObject.submit_success_function)();
-
+                            jQuery('.form-content-table').fadeOut('fast');
+                            jQuery('#content_submit_but').fadeOut('fast');
                         } else {
                             jQuery('#error').html(data['message']);
                             jQuery('#content_submit_but').prop('disabled', false);
@@ -900,6 +923,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                     jQuery('#error').html(evt);
                 });
             }
+            
             jQuery(document).on('load', 'dt-connection', function (e) {
                 function done(data) {
                     // Was our post fetch request successful...?
@@ -918,6 +942,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 }
                 loadOptions(e.detail, done);
             });
+
             jQuery(document).on('load', 'dt-tags', function (e) {
                 function done(data) {
                     // Was our post fetch request successful...?
@@ -935,6 +960,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 }
                 loadOptions(e.detail, done);
             });
+
             jQuery(document).on('load', 'dt-location', function (e) {
                 function done(data) {
                     // Was our post fetch request successful...?
@@ -951,6 +977,51 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                     }
                 }
                 loadOptions(e.detail, done);
+            });
+
+            window.fns = {
+                search: {
+                    show() {
+                        $('#wrapSearchToggle')
+                        $('#wrapSearchInput')
+                        $('#spnSearch')
+                        $('#spnCancel')
+                        $('#txtSearch')
+
+                        if(this.d.shown) {
+                            $('#spnSearch').show()
+                            $('#spnCancel').hide()
+                            $('#wrapSearchInput').hide()
+
+                            if($('#txtSearch').val() !== '') {
+                              window.get_magic()
+                            }
+
+
+                            $('#txtSearch').val('')
+                            this.d.shown = false
+                        }
+                        else {
+                            $('#spnSearch').hide()
+                            $('#spnCancel').show()
+                            $('#wrapSearchInput').show()
+
+                            this.d.shown = true
+                        }
+                    },
+
+                    hide() {
+                    },
+                    d: {
+                        shown: false
+                    }
+                }
+            };
+
+            $('#txtSearch').on('keypress', function(e) {
+              if(e.which === 13) {
+                window.get_magic($('#txtSearch').val())
+              }
             });
         </script>
         <?php
@@ -995,13 +1066,31 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
             <hr>
             <div id="content">
                 <div id="assigned_posts_div" style="display: none;">
-                    <h3><?php echo esc_html( $this->sub_post_type_display ) ?> [ <span id="total">0</span> ]</h3>
+                  <div>
+                    <div style="width: calc(100% - 37px); float:left; display: inline-block;">
+                      <h3 style="height: 36px; line-height: 36px; margin-bottom: 0px;"><?php echo esc_html( $this->sub_post_type_display ) ?> [ <span id="total">0</span> ] </h3>
+                    </div>
+
+                    <!-- Search Toggle -->
+                    <div id="wrapSearchToggle" style="float:right; width: 36px; height: 36px; line-height: 36px; text-align: center;" onclick="fns.search.show()">
+                      <span id="spnSearch"><i class="fi-magnifying-glass" style="color: #777;"></i></span>
+                      <span id="spnCancel" style="display:none;"><i class="fi-x" style="color: red;"></i></span>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <div id="wrapSearchInput" style="padding: 10px; display:none;">
+                      <input type="text" id="txtSearch" placeholder="Group name ..." />
+                    </div>
+                  </div>
                     <hr>
-                    <div class="grid-x api-content-div-style" id="api-content">
+                    <div class="grid-x api-content-div-style" id="api-content" style="position: relative;">
                         <table class="api-content-table">
                             <tbody>
                             </tbody>
                         </table>
+
+                        <div id="apiContentLoader" style="position: absolute; top: 0; bottom: 0; left:0; right: 0; background: rgba(255,255,255,0.9); text-align: center; line-height: 300px;">
+                        	Updating
+                        </div>
                     </div>
                     <br>
 
@@ -1067,6 +1156,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
             return $options[$key];
         }, $keys);
     }
+
     /**
      * Copied from theme to replace web component rendering. Can be removed if/when web-components are fully adopted in the theme.
      * @param $field_key
@@ -1483,6 +1573,10 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                     ],
                 ]
             ];
+
+            if(isset($params['search'])) {
+              $options['text'] = $params['search'];
+            }
 
             $options = apply_filters( 'dt_bulk_magic_link_sender_' . $this->type . '_posts_query', $options );
 
