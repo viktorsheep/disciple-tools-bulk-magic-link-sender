@@ -397,9 +397,9 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                   lang: jsObject.lang
                 }
 
-                if(searchWord.length > 0) {
-                    payload.search = searchWord
-                }
+              if(searchWord.length > 0) {
+                payload.search = searchWord
+              }
 
                 jQuery.ajax({
                     type: "GET",
@@ -457,7 +457,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
              * Fetch requested group details
              */
             window.get_post = (post_id) => {
-                let comment_count = 2;
+                let comment_count = 10;
 
                 jQuery('.form-content-table').fadeOut('fast', function () {
 
@@ -493,12 +493,16 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                             jQuery('#form-content').replaceWith(data['form_html']);
 
                             // Display submit button
-                            jQuery('#content_submit_but').fadeIn('fast');
+                            jQuery('#content_submit_but').show();
 
                             // Display updated post fields
+                            /*
                             jQuery('.form-content-table').fadeIn('fast', function () {
                                 window.activate_field_controls();
                             });
+                             */
+                            jQuery('.form-content-table').show()
+                            window.activate_field_controls();
                         } else {
                             // TODO: Error Msg...!
                         }
@@ -869,9 +873,11 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                         url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/update',
                         beforeSend: function (xhr) {
                             xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
+                              /*
                             jQuery('.api-content-table').fadeOut('fast', function() {
                                 jQuery('#apiContentLoader').fadeIn('fast');
                             });
+                               */
                         }
 
                     }).done(function (data) {
@@ -881,6 +887,8 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                             Function(jsObject.submit_success_function)();
                             jQuery('.form-content-table').fadeOut('fast');
                             jQuery('#content_submit_but').fadeOut('fast');
+                            jQuery('#content_submit_but').prop('disabled', false);
+                            window.get_post(payload.post_id)
                         } else {
                             jQuery('#error').html(data['message']);
                             jQuery('#content_submit_but').prop('disabled', false);
@@ -1012,6 +1020,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
 
                     hide() {
                     },
+
                     d: {
                         shown: false
                     }
@@ -1447,7 +1456,7 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                             </td>
                         </tr>
                         <?php
-                        $recent_comments = DT_Posts::get_post_comments( $post['post_type'], $post['ID'], false, 'all', [ 'number' => 2 ] );
+                        $recent_comments = DT_Posts::get_post_comments( $post['post_type'], $post['ID'], false, 'all', [ 'number' => 10 ] );
                         foreach ( $recent_comments['comments'] ?? [] as $comment ) {
                             ?>
                             <tr>

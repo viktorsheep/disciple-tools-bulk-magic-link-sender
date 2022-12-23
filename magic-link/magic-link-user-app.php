@@ -262,14 +262,14 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
              */
             window.get_magic = (searchWord = '') => {
               
-                const payload = {
-                    action: 'get',
-                    parts: jsObject.parts
-                }
+              const payload = {
+                action: 'get',
+                parts: jsObject.parts
+              }
 
-                if(searchWord.length > 0) {
-                    payload.search = searchWord
-                }
+              if(searchWord.length > 0) {
+                payload.search = searchWord
+              }
 
                 jQuery.ajax({
                     type: "GET",
@@ -284,20 +284,20 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                     beforeSend: function (xhr) {
                         xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
 
-                        $('.api-content-table').hide()
-                        $('#apiContentLoader').show()
+                          $('.api-content-table').hide()
+                          $('#apiContentLoader').show()
                     }
                 }).done(function (data) {
-                    $('.api-content-table').show()
-                    $('#apiContentLoader').hide()
+                      $('.api-content-table').show()
+                      $('#apiContentLoader').hide()
 
-                    window.load_magic(data)
+                      window.load_magic(data)
                 }).fail(function (e) {
-                    console.log(e)
-                    jQuery('#error').html(e)
-                    $('.api-content-table').show()
-                    $('#apiContentLoader').hide()
-                })
+                      console.log(e)
+                      jQuery('#error').html(e)
+                      $('.api-content-table').show()
+                      $('#apiContentLoader').hide()
+                    })
             };
 
             /**
@@ -332,7 +332,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
              * Fetch requested contact details
              */
             window.get_contact = (post_id) => {
-                let comment_count = 2;
+                let comment_count = 10;
 
                 jQuery('.form-content-table').hide()
 
@@ -620,6 +620,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                         // If successful, refresh page, otherwise; display error message
                         if (data['success']) {
                             Function(jsObject.submit_success_function)();
+                            $('#content_submit_but').prop('disabled', false)
+                            window.get_contact(payload.post_id)
 
                         } else {
                             jQuery('#error').html(data['message']);
@@ -649,7 +651,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                             $('#wrapSearchInput').hide()
 
                             if($('#txtSearch').val() !== '') {
-                                window.get_magic()
+                              window.get_magic()
                             }
 
 
@@ -667,7 +669,6 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
 
                     hide() {
                     },
-
                     d: {
                         shown: false
                     }
@@ -698,30 +699,30 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             <hr>
             <div id="content">
                 <div id="assigned_contacts_div" style="display: none;">
-                    <div>
-                        <div style="width: calc(100% - 37px); float:left; display: inline-block;">
-                            <h3><?php esc_html_e( "Contacts", 'disciple_tools' ) ?> [ <span id="total">0</span> ]</h3>
-                        </div>
-
-                        <!-- Search Toggle -->
-                        <div id="wrapSearchToggle" style="float:right; width: 36px; height: 36px; line-height: 36px; text-align: center;" onclick="fns.search.show()">
-                            <span id="spnSearch"><i class="fi-magnifying-glass" style="color: #777;"></i></span>
-                            <span id="spnCancel" style="display:none;"><i class="fi-x" style="color: red;"></i></span>
-                        </div>
-                        <div style="clear:both;"></div>
-                        <div id="wrapSearchInput" style="padding: 10px; display:none;">
-                            <input type="text" id="txtSearch" placeholder="Group name ..." />
-                        </div>
+                  <div>
+                    <div style="width: calc(100% - 37px); float:left; display: inline-block;">
+                      <h3><?php esc_html_e( "Contacts", 'disciple_tools' ) ?> [ <span id="total">0</span> ]</h3>
                     </div>
+
+                    <!-- Search Toggle -->
+                    <div id="wrapSearchToggle" style="float:right; width: 36px; height: 36px; line-height: 36px; text-align: center;" onclick="fns.search.show()">
+                      <span id="spnSearch"><i class="fi-magnifying-glass" style="color: #777;"></i></span>
+                      <span id="spnCancel" style="display:none;"><i class="fi-x" style="color: red;"></i></span>
+                    </div>
+                    <div style="clear:both;"></div>
+                    <div id="wrapSearchInput" style="padding: 10px; display:none;">
+                      <input type="text" id="txtSearch" placeholder="Group name ..." />
+                    </div>
+                  </div>
                     <hr>
                     <div class="grid-x api-content-div-style" id="api-content">
                         <table class="api-content-table">
-                            <thead style="border: 0px solid transparent;">
-                                <tr style="border: 0px solid transparent; border-bottom: 1px solid #ddd;">
-                                    <td>Name</td>
-                                    <td width="150">Last Modified</td>
-                                </tr>
-                            </thead>
+                          <thead style="border: 0px solid transparent;">
+                            <tr style="border: 0px solid transparent; border-bottom: 1px solid #ddd;">
+                              <td>Name</td>
+                              <td width="150">Last Modified</td>
+                            </tr>
+                          </thead>
                             <tbody>
                             </tbody>
                         </table>
@@ -888,7 +889,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             ];
 
             if(isset($params['search'])) {
-                $options['text'] = $params['search'];
+              $options['text'] = $params['search'];
             }
 
             // Fetch all assigned posts

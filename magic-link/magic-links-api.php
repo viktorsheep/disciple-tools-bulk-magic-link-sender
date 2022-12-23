@@ -1302,7 +1302,7 @@ Thanks!';
                 gravity: "bottom",
                 callback: function() {
                     //window.location.reload();
-                    window.get_magic();
+                    //window.get_magic();
                 }
 
             }).showToast();
