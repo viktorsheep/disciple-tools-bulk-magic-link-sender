@@ -234,6 +234,17 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_API {
         return [];
     }
 
+    public static function fetch_dt_teams2(): array {
+        global $wpdb;
+
+        return $wpdb->get_results( "
+        SELECT DISTINCT(pm.post_id) as id, p.post_title as 'name'
+        FROM $wpdb->posts p
+        LEFT JOIN $wpdb->postmeta as pm ON (p.ID = pm.post_id AND pm.meta_key = 'group_type')
+        WHERE pm.meta_value = 'team';
+        ", ARRAY_A );
+    }
+
     public static function fetch_dt_groups(): array {
         global $wpdb;
 
@@ -268,6 +279,43 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_API {
         }
 
         return [];
+    }
+
+    public static function fetch_dt_groups2(): array {
+        global $wpdb;
+
+        return $wpdb->get_results( "
+        SELECT DISTINCT(pm.post_id) as id, p.post_title as 'name'
+        FROM $wpdb->posts p
+        LEFT JOIN $wpdb->postmeta as pm ON (p.ID = pm.post_id AND pm.meta_key = 'group_type')
+        WHERE pm.meta_value != 'team' AND pm.meta_value != '';
+        ", ARRAY_A );
+    }
+
+    public static function get_contact_details($id): array {
+        global $wpdb;
+        $post = $wpdb->get_results("
+            SELECT * FROM $wpdb->posts AS p WHERE ID = $id
+        ");
+
+        $members = $wpdb->get_results("
+            SELECT * FROM
+            (
+                SELECT p.ID AS id, p.post_title, pm.meta_key, pm.meta_value
+                FROM $wpdb->posts AS p 
+                JOIN $wpdb->postmeta AS pm ON pm.post_id = p.ID
+                WHERE id IN ( SELECT p2p_from FROM wp_p2p WHERE p2p_to = $id)
+            )
+            AS details
+            WHERE details.meta_key = 'last_modified'
+            OR details.meta_key LIKE 'contact%'
+            OR details.meta_key LIKE 'smart\_links\_user\_groups\_updates\_magic\_key\_%'
+        ", ARRAY_A);
+
+        return [
+            'post' => $post,
+            'members' => $members
+        ];
     }
 
     private static function capture_member_ids( $members ): array {
@@ -891,6 +939,10 @@ Thanks!';
 
     public static function fetch_endpoint_report_url(): string {
         return trailingslashit( site_url() ) . 'wp-json/disciple_tools_magic_links/v1/report';
+    }
+
+    public static function fetch_endpoint_get_contact_details_url(): string {
+        return trailingslashit( site_url() ) . 'wp-json/disciple_tools_magic_links/v1/contact_details';
     }
 
     public static function fetch_report( $id ) {

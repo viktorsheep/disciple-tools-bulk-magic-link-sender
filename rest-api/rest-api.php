@@ -31,6 +31,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Endpoints {
                 }
             ]
         );
+
         register_rest_route(
             $namespace, '/user_links_manage', [
                 'methods'             => WP_REST_Server::CREATABLE,
@@ -40,6 +41,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Endpoints {
                 }
             ]
         );
+
         register_rest_route(
             $namespace, '/assigned_manage', [
                 'methods'             => WP_REST_Server::CREATABLE,
@@ -49,6 +51,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Endpoints {
                 }
             ]
         );
+
         register_rest_route(
             $namespace, '/send_now', [
                 'methods'             => WP_REST_Server::CREATABLE,
@@ -58,11 +61,22 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Endpoints {
                 }
             ]
         );
+
         register_rest_route(
             $namespace, '/report', [
                 'methods'             => WP_REST_Server::READABLE,
                 'callback'            => [ $this, 'get_report' ],
                 'permission_callback' => function ( WP_REST_Request $request ) {
+                    return $this->has_permission();
+                }
+            ]
+        );
+
+        register_rest_route(
+            $namespace, '/contact_details', [
+                'methods'               => WP_REST_Server::READABLE,
+                'callback'              => [ $this, 'get_contact_details'],
+                'permission_callback'   => function (WP_REST_Request $request) {
                     return $this->has_permission();
                 }
             ]
@@ -395,6 +409,28 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Endpoints {
             $response['success'] = $success;
             $response['message'] = $success ? 'Loaded data for report id: ' . $id : 'Unable to load data for report id: ' . $id;
             $response['report']  = $success ? $report : null;
+        }
+
+        return $response;
+    }
+
+    public function get_contact_details( WP_REST_Request $request ): array {
+
+        // Prepare response payload
+        $response = [];
+
+        if ( isset( $request->get_params()['id'] ) ) {
+					$record = Disciple_Tools_Bulk_Magic_link_Sender_API::get_contact_details($request->get_params()['id']);
+					$success = !empty($record);
+					$response = [
+						'success' => true,
+						'message' => 'Getting members success.',
+						'record' => $record
+					];
+
+        } else {
+            $response['success'] = false;
+            $response['message'] = 'Unable to execute request, due to missing parameters.';
         }
 
         return $response;

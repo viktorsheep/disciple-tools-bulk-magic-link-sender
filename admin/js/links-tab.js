@@ -8,6 +8,7 @@ jQuery(function ($) {
     }
   });
 
+
   // Event Listeners
   $(document).on('click', '#ml_main_col_available_link_objs_new', function () {
     handle_new_link_obj_request();
@@ -595,7 +596,7 @@ jQuery(function ($) {
     return enabled;
   }
 
-  function handle_add_users_teams_request(auto_update, selected_id, inc_default_members, load_contact_details, callback) {
+  async function handle_add_users_teams_request(auto_update, selected_id, inc_default_members, load_contact_details, callback) {
 
     // Flag to determine callback execution
     let execute_callback = true;
@@ -606,11 +607,11 @@ jQuery(function ($) {
       // Add new row accordingly, based on selection type
       let html = null;
       if (selected_id.startsWith('users+')) {
-        html = build_user_row_html(auto_update, selected_id);
+        html = await build_user_row_html(auto_update, selected_id);
       } else if (selected_id.startsWith('teams+')) {
-        html = build_team_group_row_html(auto_update, selected_id, inc_default_members, 'Team');
+        html = await build_team_group_row_html(auto_update, selected_id, inc_default_members, 'Team');
       } else if (selected_id.startsWith('groups+')) {
-        html = build_team_group_row_html(auto_update, selected_id, inc_default_members, 'Group');
+        html = await build_team_group_row_html(auto_update, selected_id, inc_default_members, 'Group');
       } else if (selected_id.startsWith('contacts+')) {
 
         /**
@@ -663,8 +664,8 @@ jQuery(function ($) {
     return (hits && hits.size() > 0) ? hits : null;
   }
 
-  function build_user_row_html(auto_update, id) {
-    let record = fetch_users_teams_record(id);
+  async function build_user_row_html(auto_update, id) {
+    let record = await fetch_users_teams_record(id);
     if (record) {
       let sys_type = 'wp_user';
       return build_row_html(auto_update, id, id.split('+')[1], 'User', record['name'], sys_type, 'user', build_comms_html(record, 'phone'), build_comms_html(record, 'email'), build_link_html(record['links'], sys_type));
@@ -702,8 +703,9 @@ jQuery(function ($) {
     });
   }
 
-  function build_team_group_row_html(auto_update, id, inc_default_members, type) {
-    let record = fetch_users_teams_record(id);
+  async function build_team_group_row_html(auto_update, id, inc_default_members, type) {
+    let record = await fetch_users_teams_record(id);
+
     let html = null;
     if (record) {
       let tokens = id.split('+');
@@ -724,6 +726,7 @@ jQuery(function ($) {
       } else { // Single member addition only! Usually resulting from a link object load!
 
         let member = fetch_member_record(record['members'], tokens[2]);
+
         if (member) {
           html = build_row_html(auto_update, id, member['type_id'], 'Member', member['post_title'], member['type'], member['post_type'], build_comms_html(member, 'phone'), build_comms_html(member, 'email'), build_link_html(member['links'], member['type']));
         }
@@ -849,7 +852,7 @@ jQuery(function ($) {
     return null;
   }
 
-  function fetch_users_teams_record(id) {
+  async function fetch_users_teams_record(id) {
     let is_user = id.startsWith('users+');
     let is_team = id.startsWith('teams+');
     let is_group = id.startsWith('groups+');
@@ -859,9 +862,11 @@ jQuery(function ($) {
     if (is_user) {
       return fetch_record(dt_id, window.dt_magic_links.dt_users, 'user_id');
     } else if (is_team) {
-      return fetch_record(dt_id, window.dt_magic_links.dt_teams, 'id');
+      // return await fetch_record(dt_id, window.dt_magic_links.dt_teams, 'id');
+      return await get_contact_details(dt_id, 'team')
     } else if (is_group) {
-      return fetch_record(dt_id, window.dt_magic_links.dt_groups, 'id');
+      // return await fetch_record(dt_id, window.dt_magic_links.dt_groups, 'id');
+      return await get_contact_details(dt_id, 'group')
     } else if (is_contact) {
       return JSON.parse($('#ml_main_col_assign_users_teams_typeahead_hidden').val());
     }
@@ -1251,6 +1256,7 @@ jQuery(function ($) {
         if (data && data['success']) {
 
           // Update global variables accordingly
+          /*
           if (data['dt_users'] && data['dt_users'].length > 0) {
             window.dt_magic_links.dt_users = data['dt_users'];
           }
@@ -1260,6 +1266,7 @@ jQuery(function ($) {
           if (data['dt_groups'] && data['dt_groups'].length > 0) {
             window.dt_magic_links.dt_groups = data['dt_groups'];
           }
+          */
 
           // Refresh assigned table so as to display updated user link states!
           reset_section_assign_users_teams(data['assigned'], function () {
@@ -1345,6 +1352,85 @@ jQuery(function ($) {
       }
     }
   }
+
+	async function get_contact_details(id, contactType) {
+
+		const group = {
+			type: contactType,
+      id: id
+		}
+
+    const result = await $.ajax({
+      url: window.dt_magic_links.dt_endpoint_get_contact_details,
+      method: 'GET',
+      data: {
+        id: group.id,
+        type: group.type
+      },
+      beforeSend: (xhr) => {
+        xhr.setRequestHeader("X-WP-Nonce", window.dt_admin_scripts.nonce);
+        $('#btnAssignAdd').prop('disabled', true).text('Getting contact details')
+      },
+      error: function (data) {
+        console.log(data);
+        $('#ml_main_col_schedules_send_now_but').prop('disabled', false);
+        $('#ml_main_col_update_msg').html('Server error, please see logging tab for more details.').fadeIn('fast');
+      }
+    });
+
+    const selected_id = {
+      id: parseInt(group.id),
+      name: result.record.post[0].post_title,
+      members: []
+    }
+
+    // formatting results
+    result.record.members.forEach(m => {
+
+      if (!selected_id.members.find(sim => sim.ID === parseInt(m.id))) {
+        selected_id.members.push({
+          ID: parseInt(m.id),
+          type_id: m.id,
+          post_title: m.post_title
+        })
+      } else {
+
+        // format phone
+        if (m.meta_key.startsWith('contact_phone') && !m.meta_key.includes('details')) {
+          if ('phone' in selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))]) {
+            selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))].phone.push(m.meta_value)
+          } else {
+            selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))].phone = [m.meta_value]
+          }
+        }
+
+        // format email
+        if (m.meta_key.startsWith('contact_email') && !m.meta_key.includes('details')) {
+          if ('email' in selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))]) {
+            selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))].email.push(m.meta_value)
+          }
+          else {
+            selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))].email = [m.meta_value]
+          }
+        }
+
+        // format smart link key
+        if (m.meta_key.startsWith('smart_links_user_groups_updates_magic_key')) {
+          const baseURL = window.dt_magic_links.dt_base_url.replace('wp-json/', '') + 'smart_links/user_groups_updates/'
+
+          if ('links' in selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))]) {
+            selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))].links[m.meta_key].push(baseURL + m.meta_value)
+          } else {
+            selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))].links = {}
+            selected_id.members[selected_id.members.findIndex(sim => sim.ID === parseInt(m.id))].links[m.meta_key]  = [baseURL + m.meta_value]
+          }
+        }
+      }
+    })
+
+    return selected_id
+
+	}
 
 
 });
