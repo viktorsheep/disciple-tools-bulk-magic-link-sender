@@ -198,6 +198,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_API {
         return [];
     }
 
+    /*
     public static function fetch_dt_teams(): array {
         global $wpdb;
 
@@ -233,6 +234,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_API {
 
         return [];
     }
+    */
 
     public static function fetch_dt_teams2(): array {
         global $wpdb;
@@ -245,6 +247,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_API {
         ", ARRAY_A );
     }
 
+    /*
     public static function fetch_dt_groups(): array {
         global $wpdb;
 
@@ -280,6 +283,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_API {
 
         return [];
     }
+    */
 
     public static function fetch_dt_groups2(): array {
         global $wpdb;

@@ -523,7 +523,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Tab_Links {
 
                         <?php
                         // Source available dt teams
-                        $dt_teams = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_teams();
+                        $dt_teams = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_teams2();
                         if ( ! empty( $dt_teams ) ) {
                             echo '<option disabled>-- teams --</option>';
                             foreach ( $dt_teams as $team ) {
@@ -535,7 +535,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Tab_Links {
 
                         <?php
                         // Source available dt groups
-                        $dt_groups = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_groups();
+                        $dt_groups = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_groups2();
                         if ( ! empty( $dt_groups ) ) {
                             echo '<option disabled>-- groups --</option>';
                             foreach ( $dt_groups as $group ) {
