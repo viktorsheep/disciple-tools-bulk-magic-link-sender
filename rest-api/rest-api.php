@@ -122,6 +122,7 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Endpoints {
         $params = $request->get_params();
         if ( isset( $params['action'], $params['assigned'], $params['link_obj_id'], $params['magic_link_type'] ) ) {
 
+
             // Adjust assigned array shape, to ensure it is processed accordingly further downstream
             $assigned = json_decode( json_encode( $params['assigned'] ) );
 
@@ -174,9 +175,9 @@ class Disciple_Tools_Bulk_Magic_Link_Sender_Endpoints {
             $response['success']   = true;
             $response['message']   = 'User links management action[' . $params['action'] . '] successfully executed.';
             $response['assigned']  = $assigned;
-            $response['dt_users']  = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_users();
-            $response['dt_teams']  = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_teams();
-            $response['dt_groups'] = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_groups();
+            //$response['dt_users']  = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_users();
+            //$response['dt_teams']  = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_teams2();
+            //$response['dt_groups'] = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_dt_groups2();
 
         } else {
             $response['success'] = false;
