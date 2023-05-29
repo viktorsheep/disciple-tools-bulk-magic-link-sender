@@ -1,5 +1,5 @@
 <?php
-if ( ! defined( 'ABSPATH' ) ) {
+if (!defined('ABSPATH')) {
     exit;
 } // Exit if accessed directly.
 
@@ -7,7 +7,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Class Disciple_Tools_Magic_Links_Magic_User_App
  */
-class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
+class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
+{
 
     public $page_title = 'User Contact Updates';
     public $page_description = 'An update summary of assigned contacts.';
@@ -24,21 +25,23 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         'contact'
     ]; // Order of translatable flags to be checked. Translate on first hit..!
 
-    public static function instance() {
-        if ( is_null( self::$_instance ) ) {
+    public static function instance()
+    {
+        if (is_null(self::$_instance)) {
             self::$_instance = new self();
         }
 
         return self::$_instance;
     } // End instance()
 
-    public function __construct() {
+    public function __construct()
+    {
         /**
          * As incoming requests could be for either valid wp users of contact
          * post records, ensure to adjust the $post_type accordingly; so as to
          * fall in line with extended class functionality!
          */
-        $this->adjust_global_values_by_incoming_sys_type( $this->fetch_incoming_link_param( 'type' ) );
+        $this->adjust_global_values_by_incoming_sys_type($this->fetch_incoming_link_param('type'));
 
         /**
          * Specify metadata structure, specific to the processing of current
@@ -80,13 +83,13 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                 ],
                 [
                     'id'    => 'comments',
-                    'label' => __( 'Comments', 'disciple_tools' ) // Special Case!
+                    'label' => __('Comments', 'disciple_tools') // Special Case!
                 ]
             ],
             'fields_refresh' => [
                 'enabled'    => true,
                 'post_type'  => 'contacts',
-                'ignore_ids' => [ 'comments' ]
+                'ignore_ids' => ['comments']
             ]
         ];
 
@@ -99,34 +102,34 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         /**
          * user_app and module section
          */
-        add_filter( 'dt_settings_apps_list', [ $this, 'dt_settings_apps_list' ], 10, 1 );
-        add_action( 'rest_api_init', [ $this, 'add_endpoints' ] );
+        add_filter('dt_settings_apps_list', [$this, 'dt_settings_apps_list'], 10, 1);
+        add_action('rest_api_init', [$this, 'add_endpoints']);
 
         /**
          * tests if other URL
          */
         $url = dt_get_url_path();
-        if ( strpos( $url, $this->root . '/' . $this->type ) === false ) {
+        if (strpos($url, $this->root . '/' . $this->type) === false) {
             return;
         }
         /**
          * tests magic link parts are registered and have valid elements
          */
-        if ( ! $this->check_parts_match() ) {
+        if (!$this->check_parts_match()) {
             return;
         }
 
         // load if valid url
-        add_action( 'dt_blank_body', [ $this, 'body' ] );
-        add_filter( 'dt_magic_url_base_allowed_css', [ $this, 'dt_magic_url_base_allowed_css' ], 10, 1 );
-        add_filter( 'dt_magic_url_base_allowed_js', [ $this, 'dt_magic_url_base_allowed_js' ], 10, 1 );
-        add_action( 'wp_enqueue_scripts', [ $this, 'wp_enqueue_scripts' ], 100 );
-
+        add_action('dt_blank_body', [$this, 'body']);
+        add_filter('dt_magic_url_base_allowed_css', [$this, 'dt_magic_url_base_allowed_css'], 10, 1);
+        add_filter('dt_magic_url_base_allowed_js', [$this, 'dt_magic_url_base_allowed_js'], 10, 1);
+        add_action('wp_enqueue_scripts', [$this, 'wp_enqueue_scripts'], 100);
     }
 
-    public function adjust_global_values_by_incoming_sys_type( $type ) {
-        if ( ! empty( $type ) ) {
-            switch ( $type ) {
+    public function adjust_global_values_by_incoming_sys_type($type)
+    {
+        if (!empty($type)) {
+            switch ($type) {
                 case 'wp_user':
                     $this->post_type = 'user';
                     break;
@@ -137,7 +140,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         }
     }
 
-    public function dt_magic_url_base_allowed_js( $allowed_js ) {
+    public function dt_magic_url_base_allowed_js($allowed_js)
+    {
         // @todo add or remove js files with this filter
 
         $allowed_js[] = 'toastify-js';
@@ -145,7 +149,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         return $allowed_js;
     }
 
-    public function dt_magic_url_base_allowed_css( $allowed_css ) {
+    public function dt_magic_url_base_allowed_css($allowed_css)
+    {
         // @todo add or remove js files with this filter
 
         $allowed_css[] = 'toastify-js-css';
@@ -153,9 +158,12 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         return $allowed_css;
     }
 
-    public function wp_enqueue_scripts() {
-        wp_enqueue_style( 'toastify-js-css', 'https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css', [], '1.12.0' );
-        wp_enqueue_script( 'toastify-js', 'https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js', [ 'jquery' ], '1.12.0' );
+    public function wp_enqueue_scripts()
+    {
+        wp_enqueue_style('toastify-js-css', 'https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css', [], '1.12.0');
+        wp_enqueue_style('micon', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0', [], '1');
+        wp_enqueue_style('dashicons');
+        wp_enqueue_script('toastify-js', 'https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.js', ['jquery'], '1.12.0');
     }
 
     /**
@@ -170,8 +178,9 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
      *
      * @return mixed
      */
-    public function dt_settings_apps_list( $apps_list ) {
-        $apps_list[ $this->meta_key ] = [
+    public function dt_settings_apps_list($apps_list)
+    {
+        $apps_list[$this->meta_key] = [
             'key'              => $this->meta_key,
             'url_base'         => $this->root . '/' . $this->type,
             'label'            => $this->page_title,
@@ -188,8 +197,9 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
      * @see DT_Magic_Url_Base()->header_style() for default state
      * @todo remove if not needed
      */
-    public function header_style() {
-        ?>
+    public function header_style()
+    {
+?>
         <style>
             body {
                 background-color: white;
@@ -217,7 +227,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                 background-color: #f5f5f5;
             }
         </style>
-        <?php
+    <?php
     }
 
     /**
@@ -226,10 +236,11 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
      * @see DT_Magic_Url_Base()->header_javascript() for default state
      * @todo remove if not needed
      */
-    public function header_javascript() {
-        ?>
+    public function header_javascript()
+    {
+    ?>
         <script></script>
-        <?php
+    <?php
     }
 
     /**
@@ -238,66 +249,68 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
      * @see DT_Magic_Url_Base()->footer_javascript() for default state
      * @todo remove if not needed
      */
-    public function footer_javascript() {
-        ?>
+    public function footer_javascript()
+    {
+    ?>
         <script>
-            let jsObject = [<?php echo json_encode( [
-                'map_key'                 => DT_Mapbox_API::get_key(),
-                'root'                    => esc_url_raw( rest_url() ),
-                'nonce'                   => wp_create_nonce( 'wp_rest' ),
-                'parts'                   => $this->parts,
-                'milestones'              => DT_Posts::get_post_field_settings( 'contacts' )['milestones']['default'],
-                'overall_status'          => DT_Posts::get_post_field_settings( 'contacts' )['overall_status']['default'],
-                'faith_status'            => DT_Posts::get_post_field_settings( 'contacts' )['faith_status']['default'],
-                'link_obj_id'             => Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_option_link_obj( $this->fetch_incoming_link_param( 'id' ) ),
-                'sys_type'                => $this->fetch_incoming_link_param( 'type' ),
-                'translations'            => [
-                    'add' => __( 'Add Magic', 'disciple-tools-bulk-magic-link-sender' ),
-                ],
-                'submit_success_function' => Disciple_Tools_Bulk_Magic_Link_Sender_API::get_link_submission_success_js_code()
-            ] ) ?>][0]
+            let jsObject = [<?php echo json_encode([
+                                'map_key'                 => DT_Mapbox_API::get_key(),
+                                'root'                    => esc_url_raw(rest_url()),
+                                'nonce'                   => wp_create_nonce('wp_rest'),
+                                'parts'                   => $this->parts,
+                                'milestones'              => DT_Posts::get_post_field_settings('contacts')['milestones']['default'],
+                                'overall_status'          => DT_Posts::get_post_field_settings('contacts')['overall_status']['default'],
+                                'faith_status'            => DT_Posts::get_post_field_settings('contacts')['faith_status']['default'],
+                                'link_obj_id'             => Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_option_link_obj($this->fetch_incoming_link_param('id')),
+                                'sys_type'                => $this->fetch_incoming_link_param('type'),
+                                'ekballo_chat_url'                => get_option('ekballo_chat_url'),
+                                'translations'            => [
+                                    'add' => __('Add Magic', 'disciple-tools-bulk-magic-link-sender'),
+                                ],
+                                'submit_success_function' => Disciple_Tools_Bulk_Magic_Link_Sender_API::get_link_submission_success_js_code()
+                            ]) ?>][0]
 
             /**
              * Fetch assigned contacts
              */
             window.get_magic = (searchWord = '') => {
-              
-              const payload = {
-                action: 'get',
-                parts: jsObject.parts
-              }
 
-              if(searchWord.length > 0) {
-                payload.search = searchWord
-              }
+                const payload = {
+                    action: 'get',
+                    parts: jsObject.parts
+                }
+
+                if (searchWord.length > 0) {
+                    payload.search = searchWord
+                }
 
                 jQuery.ajax({
                     type: "GET",
                     data: {
-                      ...payload
+                        ...payload
                         //action: 'get',
                         //parts: jsObject.parts
                     },
                     contentType: "application/json; charset=utf-8",
                     dataType: "json",
                     url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type,
-                    beforeSend: function (xhr) {
+                    beforeSend: function(xhr) {
                         xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
 
-                          $('.api-content-table').hide()
-                          $('#apiContentLoader').show()
+                        $('.api-content-table').hide()
+                        $('#apiContentLoader').show()
                     }
-                }).done(function (data) {
-                      $('.api-content-table').show()
-                      $('#apiContentLoader').hide()
+                }).done(function(data) {
+                    $('.api-content-table').show()
+                    $('#apiContentLoader').hide()
 
-                      window.load_magic(data)
-                }).fail(function (e) {
-                      console.log(e)
-                      jQuery('#error').html(e)
-                      $('.api-content-table').show()
-                      $('#apiContentLoader').hide()
-                    })
+                    window.load_magic(data)
+                }).fail(function(e) {
+                    console.log(e)
+                    jQuery('#error').html(e)
+                    $('.api-content-table').show()
+                    $('#apiContentLoader').hide()
+                })
             };
 
             /**
@@ -317,13 +330,34 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
 
                 // Iterate over returned posts
                 if (data['posts']) {
+
+                    console.log(data['posts'])
                     data['posts'].forEach(v => {
-                      let html = `<tr onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">
-                        <td>${window.lodash.escape(v.name)}</td>
+
+                        const hasFb = v.facebook !== '' ? true : false
+                        const fb = {
+                            id: hasFb ? v.facebook.page_scoped_ids[0] : ''
+                        }
+
+                        const strFacebookLink = `
+										`
+                        //let html = `<tr onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">
+                        let html = `<tr>
+                        <td onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">${window.lodash.escape(v.name)}</td>
                         <td style="width: 220px;">${window.lodash.escape(v.last_modified)}</td>
+												<td style="text-align:center;">
+												${ jsObject.ekballo_chat_url !== '' || jsObject.ekballo_chat_url !== false
+												?
+												(hasFb
+													? `<a href="${ hasFb ? jsObject.ekballo_chat_url + '/#/magic_link?psid=' + fb.id : '#' }" target="_blank" style="font-size: 24px;">
+														<i class="fi-comments" style="color: rgb(31, 145, 242);"></i>
+														</a>`
+													: '<i class="fi-comments" style="color: #999; font-size: 24px;"></i>')
+												: ''}
+												</td>
                         </tr>`;
 
-                      table.find('tbody').append(html);
+                        table.find('tbody').append(html);
                     });
                 }
             };
@@ -336,168 +370,168 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
 
                 jQuery('.form-content-table').hide()
 
-                    // Dispatch request call
-                    jQuery.ajax({
-                        type: "GET",
-                        data: {
-                            action: 'get',
-                            parts: jsObject.parts,
-                            sys_type: jsObject.sys_type,
-                            post_id: post_id,
-                            comment_count: comment_count,
-                            ts: moment().unix() // Alter url shape, so as to force cache refresh!
-                        },
-                        contentType: "application/json; charset=utf-8",
-                        dataType: "json",
-                        url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/post',
-                        beforeSend: function (xhr) {
-                            xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce);
-                            xhr.setRequestHeader('Cache-Control', 'no-store');
-                        }
+                // Dispatch request call
+                jQuery.ajax({
+                    type: "GET",
+                    data: {
+                        action: 'get',
+                        parts: jsObject.parts,
+                        sys_type: jsObject.sys_type,
+                        post_id: post_id,
+                        comment_count: comment_count,
+                        ts: moment().unix() // Alter url shape, so as to force cache refresh!
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/post',
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce);
+                        xhr.setRequestHeader('Cache-Control', 'no-store');
+                    }
 
-                    }).done(function (data) {
+                }).done(function(data) {
 
-                        // Was our post fetch request successful...?
-                        if (data['success'] && data['post']) {
+                    // Was our post fetch request successful...?
+                    if (data['success'] && data['post']) {
 
-                            // Display submit button
-                            jQuery('#content_submit_but').fadeIn('fast');
+                        // Display submit button
+                        jQuery('#content_submit_but').fadeIn('fast');
 
-                            // ID
-                            jQuery('#post_id').val(data['post']['ID']);
+                        // ID
+                        jQuery('#post_id').val(data['post']['ID']);
 
-                            // NAME
-                            let post_name = window.lodash.escape(data['post']['name']);
-                            jQuery('#contact_name').html(post_name);
-                            if (window.is_field_enabled('name')) {
-                                jQuery('#form_content_name_td').html(`
+                        // NAME
+                        let post_name = window.lodash.escape(data['post']['name']);
+                        jQuery('#contact_name').html(post_name);
+                        if (window.is_field_enabled('name')) {
+                            jQuery('#form_content_name_td').html(`
                                 <input id="post_name" type="text" value="${post_name}" />
                                 `);
-                            } else {
-                                jQuery('#form_content_name_tr').hide();
-                            }
+                        } else {
+                            jQuery('#form_content_name_tr').hide();
+                        }
 
-                            // MILESTONES
-                            if (window.is_field_enabled('milestones')) {
-                                let html_milestones = ``;
-                                jQuery.each(jsObject.milestones, function (idx, milestone) {
+                        // MILESTONES
+                        if (window.is_field_enabled('milestones')) {
+                            let html_milestones = ``;
+                            jQuery.each(jsObject.milestones, function(idx, milestone) {
 
-                                    // Determine button selection state
-                                    let button_select_state = 'empty-select-button';
-                                    if (data['post']['milestones'] && (data['post']['milestones'].indexOf(idx) > -1)) {
-                                        button_select_state = 'selected-select-button';
-                                    }
+                                // Determine button selection state
+                                let button_select_state = 'empty-select-button';
+                                if (data['post']['milestones'] && (data['post']['milestones'].indexOf(idx) > -1)) {
+                                    button_select_state = 'selected-select-button';
+                                }
 
-                                    // Build button widget
-                                    html_milestones += `<button id="${window.lodash.escape(idx)}"
+                                // Build button widget
+                                html_milestones += `<button id="${window.lodash.escape(idx)}"
                                                             type="button"
                                                             data-field-key="milestones"
                                                             class="dt_multi_select ${button_select_state} button select-button">
                                                         <img class="dt-icon" src="${window.lodash.escape(milestone['icon'])}"/>
                                                         ${window.lodash.escape(milestone['label'])}
                                                     </button>`;
-                                });
-                                jQuery('#form_content_milestones_td').html(html_milestones);
+                            });
+                            jQuery('#form_content_milestones_td').html(html_milestones);
 
-                                // Respond to milestone button state changes
-                                jQuery('.dt_multi_select').on("click", function (evt) {
-                                    let milestone = jQuery(evt.currentTarget);
-                                    if (milestone.hasClass('empty-select-button')) {
-                                        milestone.removeClass('empty-select-button');
-                                        milestone.addClass('selected-select-button');
-                                    } else {
-                                        milestone.removeClass('selected-select-button');
-                                        milestone.addClass('empty-select-button');
-                                    }
-                                });
-                            } else {
-                                jQuery('#form_content_milestones_tr').hide();
-                            }
-
-                            // OVERALL_STATUS
-                            if (window.is_field_enabled('overall_status')) {
-                                let html_overall_status = `<select id="post_overall_status" class="select-field">`;
-                                jQuery.each(jsObject.overall_status, function (idx, overall_status) {
-
-                                    // Determine selection state
-                                    let select_state = '';
-                                    if (data['post']['overall_status'] && (String(data['post']['overall_status']['key']) === String(idx))) {
-                                        select_state = 'selected';
-                                    }
-
-                                    // Add option
-                                    html_overall_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(overall_status['label'])}</option>`;
-                                });
-                                html_overall_status += `</select>`;
-                                jQuery('#form_content_overall_status_td').html(html_overall_status);
-                            } else {
-                                jQuery('#form_content_overall_status_tr').hide();
-                            }
-
-                            // FAITH_STATUS
-                            if (window.is_field_enabled('faith_status')) {
-                                let html_faith_status = `<select id="post_faith_status" class="select-field">`;
-                                html_faith_status += `<option value=""></option>`;
-                                jQuery.each(jsObject.faith_status, function (idx, faith_status) {
-
-                                    // Determine selection state
-                                    let select_state = '';
-                                    if (data['post']['faith_status'] && (String(data['post']['faith_status']['key']) === String(idx))) {
-                                        select_state = 'selected';
-                                    }
-
-                                    // Add option
-                                    html_faith_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(faith_status['label'])}</option>`;
-                                });
-                                html_faith_status += `</select>`;
-                                jQuery('#form_content_faith_status_td').html(html_faith_status);
-                            } else {
-                                jQuery('#form_content_faith_status_tr').hide();
-                            }
-
-                            // CONTACT_PHONE
-                            if (window.is_field_enabled('contact_phone')) {
-                                if (data['post']['contact_phone']) {
-
-                                    let phone_numbers = [];
-                                    data['post']['contact_phone'].forEach(phone => {
-                                        phone_numbers.push(phone['value']);
-                                    });
-
-                                    jQuery('#form_content_contact_phone_td').html(phone_numbers.length > 0 ? phone_numbers.join(', ') : '');
+                            // Respond to milestone button state changes
+                            jQuery('.dt_multi_select').on("click", function(evt) {
+                                let milestone = jQuery(evt.currentTarget);
+                                if (milestone.hasClass('empty-select-button')) {
+                                    milestone.removeClass('empty-select-button');
+                                    milestone.addClass('selected-select-button');
+                                } else {
+                                    milestone.removeClass('selected-select-button');
+                                    milestone.addClass('empty-select-button');
                                 }
-                            } else {
-                                jQuery('#form_content_contact_phone_tr').hide();
-                            }
-
-                            // COMMENTS
-                            if (window.is_field_enabled('comments')) {
-                                let counter = 0;
-                                let html_comments = `<textarea></textarea><br>`;
-                                if (data['comments']['comments']) {
-                                    data['comments']['comments'].forEach(comment => {
-                                        if (counter++ < comment_count) { // Enforce comment count limit..!
-                                            html_comments += `<b>${window.lodash.escape(comment['comment_author'])} @ ${window.lodash.escape(comment['comment_date'])}</b><br>`;
-                                            html_comments += `${window.lodash.escape(comment['comment_content'])}<hr>`;
-                                        }
-                                    });
-                                }
-                                jQuery('#form_content_comments_td').html(html_comments);
-                            } else {
-                                jQuery('#form_content_comments_tr').hide();
-                            }
-
-                            // Display updated post fields
-                            jQuery('.form-content-table').show();
-
+                            });
                         } else {
-                            // TODO: Error Msg...!
+                            jQuery('#form_content_milestones_tr').hide();
                         }
 
-                    }).fail(function (e) {
-                        console.log(e);
-                        jQuery('#error').html(e);
-                    });
+                        // OVERALL_STATUS
+                        if (window.is_field_enabled('overall_status')) {
+                            let html_overall_status = `<select id="post_overall_status" class="select-field">`;
+                            jQuery.each(jsObject.overall_status, function(idx, overall_status) {
+
+                                // Determine selection state
+                                let select_state = '';
+                                if (data['post']['overall_status'] && (String(data['post']['overall_status']['key']) === String(idx))) {
+                                    select_state = 'selected';
+                                }
+
+                                // Add option
+                                html_overall_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(overall_status['label'])}</option>`;
+                            });
+                            html_overall_status += `</select>`;
+                            jQuery('#form_content_overall_status_td').html(html_overall_status);
+                        } else {
+                            jQuery('#form_content_overall_status_tr').hide();
+                        }
+
+                        // FAITH_STATUS
+                        if (window.is_field_enabled('faith_status')) {
+                            let html_faith_status = `<select id="post_faith_status" class="select-field">`;
+                            html_faith_status += `<option value=""></option>`;
+                            jQuery.each(jsObject.faith_status, function(idx, faith_status) {
+
+                                // Determine selection state
+                                let select_state = '';
+                                if (data['post']['faith_status'] && (String(data['post']['faith_status']['key']) === String(idx))) {
+                                    select_state = 'selected';
+                                }
+
+                                // Add option
+                                html_faith_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(faith_status['label'])}</option>`;
+                            });
+                            html_faith_status += `</select>`;
+                            jQuery('#form_content_faith_status_td').html(html_faith_status);
+                        } else {
+                            jQuery('#form_content_faith_status_tr').hide();
+                        }
+
+                        // CONTACT_PHONE
+                        if (window.is_field_enabled('contact_phone')) {
+                            if (data['post']['contact_phone']) {
+
+                                let phone_numbers = [];
+                                data['post']['contact_phone'].forEach(phone => {
+                                    phone_numbers.push(phone['value']);
+                                });
+
+                                jQuery('#form_content_contact_phone_td').html(phone_numbers.length > 0 ? phone_numbers.join(', ') : '');
+                            }
+                        } else {
+                            jQuery('#form_content_contact_phone_tr').hide();
+                        }
+
+                        // COMMENTS
+                        if (window.is_field_enabled('comments')) {
+                            let counter = 0;
+                            let html_comments = `<textarea></textarea><br>`;
+                            if (data['comments']['comments']) {
+                                data['comments']['comments'].forEach(comment => {
+                                    if (counter++ < comment_count) { // Enforce comment count limit..!
+                                        html_comments += `<b>${window.lodash.escape(comment['comment_author'])} @ ${window.lodash.escape(comment['comment_date'])}</b><br>`;
+                                        html_comments += `${window.lodash.escape(comment['comment_content'])}<hr>`;
+                                    }
+                                });
+                            }
+                            jQuery('#form_content_comments_td').html(html_comments);
+                        } else {
+                            jQuery('#form_content_comments_tr').hide();
+                        }
+
+                        // Display updated post fields
+                        jQuery('.form-content-table').show();
+
+                    } else {
+                        // TODO: Error Msg...!
+                    }
+
+                }).fail(function(e) {
+                    console.log(e);
+                    jQuery('#error').html(e);
+                });
             };
 
             /**
@@ -555,7 +589,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             /**
              * Submit contact details
              */
-            jQuery('#content_submit_but').on("click", function () {
+            jQuery('#content_submit_but').on("click", function() {
                 let id = jQuery('#post_id').val();
 
                 // Reset error message field
@@ -580,7 +614,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                     }
                     if (window.is_field_enabled('milestones')) {
                         let milestones = [];
-                        jQuery('#form_content_milestones_td button').each(function () {
+                        jQuery('#form_content_milestones_td button').each(function() {
                             milestones.push({
                                 'value': jQuery(this).attr('id'),
                                 'delete': jQuery(this).hasClass('empty-select-button')
@@ -611,11 +645,11 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                         contentType: "application/json; charset=utf-8",
                         dataType: "json",
                         url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/update',
-                        beforeSend: function (xhr) {
+                        beforeSend: function(xhr) {
                             xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
                         }
 
-                    }).done(function (data) {
+                    }).done(function(data) {
 
                         // If successful, refresh page, otherwise; display error message
                         if (data['success']) {
@@ -628,7 +662,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                             jQuery('#content_submit_but').prop('disabled', false);
                         }
 
-                    }).fail(function (e) {
+                    }).fail(function(e) {
                         console.log(e);
                         jQuery('#error').html(e);
                         jQuery('#content_submit_but').prop('disabled', false);
@@ -645,20 +679,19 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                         $('#spnCancel')
                         $('#txtSearch')
 
-                        if(this.d.shown) {
+                        if (this.d.shown) {
                             $('#spnSearch').show()
                             $('#spnCancel').hide()
                             $('#wrapSearchInput').hide()
 
-                            if($('#txtSearch').val() !== '') {
-                              window.get_magic()
+                            if ($('#txtSearch').val() !== '') {
+                                window.get_magic()
                             }
 
 
                             $('#txtSearch').val('')
                             this.d.shown = false
-                        }
-                        else {
+                        } else {
                             $('#spnSearch').hide()
                             $('#spnCancel').show()
                             $('#wrapSearchInput').show()
@@ -667,8 +700,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                         }
                     },
 
-                    hide() {
-                    },
+                    hide() {},
                     d: {
                         shown: false
                     }
@@ -676,59 +708,60 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
             };
 
             $('#txtSearch').on('keypress', function(e) {
-              if(e.which === 13) {
-                window.get_magic($('#txtSearch').val())
-              }
+                if (e.which === 13) {
+                    window.get_magic($('#txtSearch').val())
+                }
             });
         </script>
-        <?php
+    <?php
         return true;
     }
 
-    public function body() {
+    public function body()
+    {
         // Revert back to dt translations
         $this->hard_switch_to_default_dt_text_domain();
-        ?>
+    ?>
         <div id="custom-style"></div>
         <div id="wrapper">
             <div class="grid-x">
                 <div class="cell center">
-                    <h2 id="title"><b><?php esc_html_e( 'Updates Needed', 'disciple_tools' ) ?></b></h2>
+                    <h2 id="title"><b><?php esc_html_e('Updates Needed', 'disciple_tools') ?></b></h2>
                 </div>
             </div>
             <hr>
             <div id="content">
                 <div id="assigned_contacts_div" style="display: none;">
-                  <div>
-                    <div style="width: calc(100% - 37px); float:left; display: inline-block;">
-                      <h3><?php esc_html_e( "Contacts", 'disciple_tools' ) ?> [ <span id="total">0</span> ]</h3>
-                    </div>
+                    <div>
+                        <div style="width: calc(100% - 37px); float:left; display: inline-block;">
+                            <h3><?php esc_html_e("Contacts", 'disciple_tools') ?> [ <span id="total">0</span> ]</h3>
+                        </div>
 
-                    <!-- Search Toggle -->
-                    <div id="wrapSearchToggle" style="float:right; width: 36px; height: 36px; line-height: 36px; text-align: center;" onclick="fns.search.show()">
-                      <span id="spnSearch"><i class="fi-magnifying-glass" style="color: #777;"></i></span>
-                      <span id="spnCancel" style="display:none;"><i class="fi-x" style="color: red;"></i></span>
+                        <!-- Search Toggle -->
+                        <div id="wrapSearchToggle" style="float:right; width: 36px; height: 36px; line-height: 36px; text-align: center;" onclick="fns.search.show()">
+                            <span id="spnSearch"><i class="fi-magnifying-glass" style="color: #777;"></i></span>
+                            <span id="spnCancel" style="display:none;"><i class="fi-x" style="color: red;"></i></span>
+                        </div>
+                        <div style="clear:both;"></div>
+                        <div id="wrapSearchInput" style="padding: 10px; display:none;">
+                            <input type="text" id="txtSearch" placeholder="Group name ..." />
+                        </div>
                     </div>
-                    <div style="clear:both;"></div>
-                    <div id="wrapSearchInput" style="padding: 10px; display:none;">
-                      <input type="text" id="txtSearch" placeholder="Group name ..." />
-                    </div>
-                  </div>
                     <hr>
                     <div class="grid-x api-content-div-style" id="api-content">
                         <table class="api-content-table">
-                          <thead style="border: 0px solid transparent;">
-                            <tr style="border: 0px solid transparent; border-bottom: 1px solid #ddd;">
-                              <td>Name</td>
-                              <td width="150">Last Modified</td>
-                            </tr>
-                          </thead>
+                            <thead style="border: 0px solid transparent;">
+                                <tr style="border: 0px solid transparent; border-bottom: 1px solid #ddd;">
+                                    <td>Name</td>
+                                    <td width="150">Last Modified</td>
+                                </tr>
+                            </thead>
                             <tbody>
                             </tbody>
                         </table>
 
                         <div id="apiContentLoader" style="position: absolute; top: 0; bottom: 0; left:0; right: 0; background: rgba(255,255,255,0.9); text-align: center; line-height: 300px;">
-                        	Updating
+                            Updating
                         </div>
 
                     </div>
@@ -744,43 +777,48 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
                 </h3>
                 <hr>
                 <div class="grid-x" id="form-content">
-                    <input id="post_id" type="hidden"/>
+                    <input id="post_id" type="hidden" />
                     <?php
-                    $field_settings = DT_Posts::get_post_field_settings( 'contacts', false );
+                    $field_settings = DT_Posts::get_post_field_settings('contacts', false);
                     ?>
                     <table style="display: none;" class="form-content-table">
                         <tbody>
-                        <tr id="form_content_name_tr">
-                            <td style="vertical-align: top;">
-                                <b><?php echo esc_attr( $field_settings['name']['name'] ); ?></b></td>
-                            <td id="form_content_name_td"></td>
-                        </tr>
-                        <tr id="form_content_milestones_tr">
-                            <td style="vertical-align: top;">
-                                <b><?php echo esc_attr( $field_settings['milestones']['name'] ); ?></b></td>
-                            <td id="form_content_milestones_td"></td>
-                        </tr>
-                        <tr id="form_content_overall_status_tr">
-                            <td style="vertical-align: top;">
-                                <b><?php echo esc_attr( $field_settings['overall_status']['name'] ); ?></b></td>
-                            <td id="form_content_overall_status_td"></td>
-                        </tr>
-                        <tr id="form_content_faith_status_tr">
-                            <td style="vertical-align: top;">
-                                <b><?php echo esc_attr( $field_settings['faith_status']['name'] ); ?></b></td>
-                            <td id="form_content_faith_status_td"></td>
-                        </tr>
-                        <tr id="form_content_contact_phone_tr">
-                            <td style="vertical-align: top;">
-                                <b><?php echo esc_attr( $field_settings['contact_phone']['name'] ); ?></b></td>
-                            <td id="form_content_contact_phone_td"></td>
-                        </tr>
-                        <tr id="form_content_comments_tr">
-                            <td style="vertical-align: top;">
-                                <b><?php esc_html_e( "Comments", 'disciple_tools' ) ?></b>
-                            </td>
-                            <td id="form_content_comments_td"></td>
-                        </tr>
+                            <tr id="form_content_name_tr">
+                                <td style="vertical-align: top;">
+                                    <b><?php echo esc_attr($field_settings['name']['name']); ?></b>
+                                </td>
+                                <td id="form_content_name_td"></td>
+                            </tr>
+                            <tr id="form_content_milestones_tr">
+                                <td style="vertical-align: top;">
+                                    <b><?php echo esc_attr($field_settings['milestones']['name']); ?></b>
+                                </td>
+                                <td id="form_content_milestones_td"></td>
+                            </tr>
+                            <tr id="form_content_overall_status_tr">
+                                <td style="vertical-align: top;">
+                                    <b><?php echo esc_attr($field_settings['overall_status']['name']); ?></b>
+                                </td>
+                                <td id="form_content_overall_status_td"></td>
+                            </tr>
+                            <tr id="form_content_faith_status_tr">
+                                <td style="vertical-align: top;">
+                                    <b><?php echo esc_attr($field_settings['faith_status']['name']); ?></b>
+                                </td>
+                                <td id="form_content_faith_status_td"></td>
+                            </tr>
+                            <tr id="form_content_contact_phone_tr">
+                                <td style="vertical-align: top;">
+                                    <b><?php echo esc_attr($field_settings['contact_phone']['name']); ?></b>
+                                </td>
+                                <td id="form_content_contact_phone_td"></td>
+                            </tr>
+                            <tr id="form_content_comments_tr">
+                                <td style="vertical-align: top;">
+                                    <b><?php esc_html_e("Comments", 'disciple_tools') ?></b>
+                                </td>
+                                <td id="form_content_comments_td"></td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -788,126 +826,136 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
 
                 <!-- SUBMIT UPDATES -->
                 <button id="content_submit_but" style="display: none; min-width: 100%;" class="button select-button">
-                    <?php esc_html_e( "Submit Update", 'disciple_tools' ) ?>
+                    <?php esc_html_e("Submit Update", 'disciple_tools') ?>
                 </button>
             </div>
         </div>
-        <?php
+<?php
     }
 
     /**
      * Register REST Endpoints
      * @link https://github.com/DiscipleTools/disciple-tools-theme/wiki/Site-to-Site-Link for outside of wordpress authentication
      */
-    public function add_endpoints() {
+    public function add_endpoints()
+    {
         $namespace = $this->root . '/v1';
         register_rest_route(
-            $namespace, '/' . $this->type, [
+            $namespace,
+            '/' . $this->type,
+            [
                 [
                     'methods'             => "GET",
-                    'callback'            => [ $this, 'endpoint_get' ],
-                    'permission_callback' => function ( WP_REST_Request $request ) {
-                        $magic = new DT_Magic_URL( $this->root );
+                    'callback'            => [$this, 'endpoint_get'],
+                    'permission_callback' => function (WP_REST_Request $request) {
+                        $magic = new DT_Magic_URL($this->root);
 
-                        return $magic->verify_rest_endpoint_permissions_on_post( $request );
+                        return $magic->verify_rest_endpoint_permissions_on_post($request);
                     },
                 ],
             ]
         );
         register_rest_route(
-            $namespace, '/' . $this->type . '/post', [
+            $namespace,
+            '/' . $this->type . '/post',
+            [
                 [
                     'methods'             => "GET",
-                    'callback'            => [ $this, 'get_post' ],
-                    'permission_callback' => function ( WP_REST_Request $request ) {
-                        $magic = new DT_Magic_URL( $this->root );
+                    'callback'            => [$this, 'get_post'],
+                    'permission_callback' => function (WP_REST_Request $request) {
+                        $magic = new DT_Magic_URL($this->root);
 
                         /**
                          * Adjust global values accordingly, so as to accommodate both wp_user
                          * and post requests.
                          */
-                        $this->adjust_global_values_by_incoming_sys_type( $request->get_params()['sys_type'] );
+                        $this->adjust_global_values_by_incoming_sys_type($request->get_params()['sys_type']);
 
-                        return $magic->verify_rest_endpoint_permissions_on_post( $request );
+                        return $magic->verify_rest_endpoint_permissions_on_post($request);
                     },
                 ],
             ]
         );
         register_rest_route(
-            $namespace, '/' . $this->type . '/update', [
+            $namespace,
+            '/' . $this->type . '/update',
+            [
                 [
                     'methods'             => "GET",
-                    'callback'            => [ $this, 'update_record' ],
-                    'permission_callback' => function ( WP_REST_Request $request ) {
-                        $magic = new DT_Magic_URL( $this->root );
+                    'callback'            => [$this, 'update_record'],
+                    'permission_callback' => function (WP_REST_Request $request) {
+                        $magic = new DT_Magic_URL($this->root);
 
                         /**
                          * Adjust global values accordingly, so as to accommodate both wp_user
                          * and post requests.
                          */
-                        $this->adjust_global_values_by_incoming_sys_type( $request->get_params()['sys_type'] );
+                        $this->adjust_global_values_by_incoming_sys_type($request->get_params()['sys_type']);
 
-                        return $magic->verify_rest_endpoint_permissions_on_post( $request );
+                        return $magic->verify_rest_endpoint_permissions_on_post($request);
                     },
                 ],
             ]
         );
     }
 
-    public function endpoint_get( WP_REST_Request $request ) {
+    public function endpoint_get(WP_REST_Request $request)
+    {
         $params = $request->get_params();
-        if ( ! isset( $params['parts'], $params['action'] ) ) {
-            return new WP_Error( __METHOD__, "Missing parameters", [ 'status' => 400 ] );
+        if (!isset($params['parts'], $params['action'])) {
+            return new WP_Error(__METHOD__, "Missing parameters", ['status' => 400]);
         }
 
         // Sanitize and fetch user id
-        $params  = dt_recursive_sanitize_array( $params );
+        $params  = dt_recursive_sanitize_array($params);
         $user_id = $params["parts"]["post_id"];
 
         // Fetch all assigned posts
         $data = [];
-        if ( ! empty( $user_id ) ) {
+        if (!empty($user_id)) {
 
             // Update logged-in user state as required
             $original_user = wp_get_current_user();
-            wp_set_current_user( $user_id );
+            wp_set_current_user($user_id);
 
             $options = [
                 'limit'  => 1000,
                 'fields' => [
                     [
-                        'assigned_to' => [ 'me' ],
-                        "subassigned" => [ 'me' ]
+                        'assigned_to' => ['me'],
+                        "subassigned" => ['me']
                     ],
                     "overall_status" => [
                         "new",
                         "unassigned",
                         "assigned",
-                        "active"
+                        "active",
+                        "from_facebook"
                     ]
                 ]
             ];
 
-            if(isset($params['search'])) {
-              $options['text'] = $params['search'];
+            if (isset($params['search'])) {
+                $options['text'] = $params['search'];
             }
 
             // Fetch all assigned posts
-            $posts = DT_Posts::list_posts( 'contacts', $options);
+            $posts = DT_Posts::list_posts('contacts', $options);
 
             // Revert to original user
-            if ( ! empty( $original_user ) && isset( $original_user->ID ) ) {
-                wp_set_current_user( $original_user->ID );
+            if (!empty($original_user) && isset($original_user->ID)) {
+                wp_set_current_user($original_user->ID);
             }
 
             // Iterate and return valid posts
-            if ( ! empty( $posts ) && isset( $posts['posts'], $posts['total'] ) ) {
+            if (!empty($posts) && isset($posts['posts'], $posts['total'])) {
                 $data['total'] = $posts['total'];
-                foreach ( $posts['posts'] ?? [] as $post ) {
+                foreach ($posts['posts'] ?? [] as $post) {
                     $data['posts'][] = [
                         'id'   => $post['ID'],
                         'name' => $post['name'],
-                        'last_modified' => $post['last_modified']['formatted']
+                        'last_modified' => $post['last_modified']['formatted'],
+                        'facebook' => isset($post['facebook_data']) ? $post['facebook_data'] : ''
                     ];
                 }
             }
@@ -916,27 +964,28 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         return $data;
     }
 
-    public function get_post( WP_REST_Request $request ) {
+    public function get_post(WP_REST_Request $request)
+    {
         $params = $request->get_params();
-        if ( ! isset( $params['post_id'], $params['parts'], $params['action'], $params['comment_count'], $params['sys_type'] ) ) {
-            return new WP_Error( __METHOD__, "Missing parameters", [ 'status' => 400 ] );
+        if (!isset($params['post_id'], $params['parts'], $params['action'], $params['comment_count'], $params['sys_type'])) {
+            return new WP_Error(__METHOD__, "Missing parameters", ['status' => 400]);
         }
 
         // Sanitize and fetch user/post id
-        $params = dt_recursive_sanitize_array( $params );
+        $params = dt_recursive_sanitize_array($params);
 
         // Update logged-in user state if required accordingly, based on their sys_type
-        if ( ! is_user_logged_in() ) {
-            $this->update_user_logged_in_state( $params['sys_type'], $params["parts"]["post_id"] );
+        if (!is_user_logged_in()) {
+            $this->update_user_logged_in_state($params['sys_type'], $params["parts"]["post_id"]);
         }
 
         // Fetch corresponding contacts post record
         $response = [];
-        $post     = DT_Posts::get_post( 'contacts', $params['post_id'], false );
-        if ( ! empty( $post ) && ! is_wp_error( $post ) ) {
+        $post     = DT_Posts::get_post('contacts', $params['post_id'], false);
+        if (!empty($post) && !is_wp_error($post)) {
             $response['success']  = true;
             $response['post']     = $post;
-            $response['comments'] = DT_Posts::get_post_comments( 'contacts', $params['post_id'], false, 'all', [ 'number' => $params['comment_count'] ] );
+            $response['comments'] = DT_Posts::get_post_comments('contacts', $params['post_id'], false, 'all', ['number' => $params['comment_count']]);
         } else {
             $response['success'] = false;
         }
@@ -944,48 +993,49 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         return $response;
     }
 
-    public function update_record( WP_REST_Request $request ) {
+    public function update_record(WP_REST_Request $request)
+    {
         $params = $request->get_params();
-        if ( ! isset( $params['post_id'], $params['parts'], $params['action'], $params['sys_type'] ) ) {
-            return new WP_Error( __METHOD__, "Missing core parameters", [ 'status' => 400 ] );
+        if (!isset($params['post_id'], $params['parts'], $params['action'], $params['sys_type'])) {
+            return new WP_Error(__METHOD__, "Missing core parameters", ['status' => 400]);
         }
 
         // Sanitize and fetch user id
-        $params = dt_recursive_sanitize_array( $params );
+        $params = dt_recursive_sanitize_array($params);
 
         // Update logged-in user state if required accordingly, based on their sys_type
-        if ( ! is_user_logged_in() ) {
-            $this->update_user_logged_in_state( $params['sys_type'], $params["parts"]["post_id"] );
+        if (!is_user_logged_in()) {
+            $this->update_user_logged_in_state($params['sys_type'], $params["parts"]["post_id"]);
         }
 
         // Capture name, if present
         $updates = [];
-        if ( isset( $params['name'] ) && ! empty( $params['name'] ) ) {
+        if (isset($params['name']) && !empty($params['name'])) {
             $updates['name'] = $params['name'];
         }
 
         // Capture overall status
-        if ( isset( $params['overall_status'] ) && ! empty( $params['overall_status'] ) ) {
+        if (isset($params['overall_status']) && !empty($params['overall_status'])) {
             $updates['overall_status'] = $params['overall_status'];
         }
 
         // Capture faith status
-        if ( isset( $params['faith_status'] ) ) {
+        if (isset($params['faith_status'])) {
             $updates['faith_status'] = $params['faith_status'];
         }
 
         // Capture milestones
-        if ( isset( $params['milestones'] ) ) {
+        if (isset($params['milestones'])) {
             $milestones = [];
-            foreach ( $params['milestones'] ?? [] as $milestone ) {
+            foreach ($params['milestones'] ?? [] as $milestone) {
                 $entry          = [];
                 $entry['value'] = $milestone['value'];
-                if ( strtolower( trim( $milestone['delete'] ) ) === 'true' ) {
+                if (strtolower(trim($milestone['delete'])) === 'true') {
                     $entry['delete'] = true;
                 }
                 $milestones[] = $entry;
             }
-            if ( ! empty( $milestones ) ) {
+            if (!empty($milestones)) {
                 $updates['milestones'] = [
                     'values' => $milestones
                 ];
@@ -993,8 +1043,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         }
 
         // Update specified post record
-        $updated_post = DT_Posts::update_post( 'contacts', $params['post_id'], $updates, false, false );
-        if ( empty( $updated_post ) || is_wp_error( $updated_post ) ) {
+        $updated_post = DT_Posts::update_post('contacts', $params['post_id'], $updates, false, false);
+        if (empty($updated_post) || is_wp_error($updated_post)) {
             return [
                 'success' => false,
                 'message' => 'Unable to update contact record details!'
@@ -1002,9 +1052,9 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         }
 
         // Add any available comments
-        if ( isset( $params['comments'] ) && ! empty( $params['comments'] ) ) {
-            $updated_comment = DT_Posts::add_post_comment( $updated_post['post_type'], $updated_post['ID'], $params['comments'], 'comment', [], false );
-            if ( empty( $updated_comment ) || is_wp_error( $updated_comment ) ) {
+        if (isset($params['comments']) && !empty($params['comments'])) {
+            $updated_comment = DT_Posts::add_post_comment($updated_post['post_type'], $updated_post['ID'], $params['comments'], 'comment', [], false);
+            if (empty($updated_comment) || is_wp_error($updated_comment)) {
                 return [
                     'success' => false,
                     'message' => 'Unable to add comment to contact record details!'
@@ -1019,18 +1069,18 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base {
         ];
     }
 
-    public function update_user_logged_in_state( $sys_type, $user_id ) {
-        switch ( strtolower( trim( $sys_type ) ) ) {
+    public function update_user_logged_in_state($sys_type, $user_id)
+    {
+        switch (strtolower(trim($sys_type))) {
             case 'post':
-                wp_set_current_user( 0 );
+                wp_set_current_user(0);
                 $current_user = wp_get_current_user();
-                $current_user->add_cap( "magic_link" );
-                $current_user->display_name = __( 'Smart Link Submission', 'disciple_tools' );
+                $current_user->add_cap("magic_link");
+                $current_user->display_name = __('Smart Link Submission', 'disciple_tools');
                 break;
             default: // wp_user
-                wp_set_current_user( $user_id );
+                wp_set_current_user($user_id);
                 break;
-
         }
     }
 }
