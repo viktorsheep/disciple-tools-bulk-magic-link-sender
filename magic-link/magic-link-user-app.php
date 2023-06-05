@@ -783,7 +783,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 jQuery('#form_content_contact_phone_td').append('<div><button type="button" class="button" id="btn_AddNewPhoneNumber">+</button></div>')
 
                 $('#btn_AddNewPhoneNumber').on('click', function(e) {
-                    const lastIdx = Number($('.wrap-input-phone:last-of-type').data('idx')) + 1
+                    const lastIdx = $('.wrap-input-phone').length + 1
                     $('#btn_AddNewPhoneNumber').before(`<div class="wrap-input-phone" data-idx="${lastIdx}" data-meta_id="new" data-meta_key="new" data-meta_details="new"><div style="width: calc(100% - 50px); display: inline-block;"><input type="text" class="contact_phone_numbers" class="contact_phone_numbers" value="" placeholder="Contact Phone Number" /></div><div class="contact-phone-remover" style="display: inline-block; width: 50px; text-align: center; cursor: pointer;" data-idx="${lastIdx}">x</div></div>`)
 
                     $('.contact-phone-remover').on('click', function() {
@@ -880,6 +880,13 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                     <br>
                 </div>
 
+                <!-- btn add new -->
+                <?php if (isset($link_obj) && property_exists($link_obj, 'type_config') && property_exists($link_obj->type_config, 'supports_create') && $link_obj->type_config->supports_create) : ?>
+                    <button id="add_new" class="button select-button">
+                        <?php esc_html_e("Add New", 'disciple_tools') ?>
+                    </button>
+                <?php endif; ?> <!-- e.o btn add new -->
+
                 <!-- ERROR MESSAGES -->
                 <span id="error" style="color: red;"></span>
                 <br>
@@ -941,13 +948,6 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                     <?php esc_html_e("Submit Update", 'disciple_tools') ?>
                 </button>
             </div>
-
-            <!-- btn add new -->
-            <?php if (isset($link_obj) && property_exists($link_obj, 'type_config') && property_exists($link_obj->type_config, 'supports_create') && $link_obj->type_config->supports_create) : ?>
-                <button id="add_new" class="button select-button">
-                    <?php esc_html_e("Add New", 'disciple_tools') ?>
-                </button>
-            <?php endif; ?> <!-- e.o btn add new -->
         </div>
 <?php
     }
