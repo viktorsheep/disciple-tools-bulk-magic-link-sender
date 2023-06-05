@@ -60,6 +60,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
             'app_type'       => 'magic_link',
             'post_type'      => $this->post_type,
             'contacts_only'  => false,
+            'supports_create' => true,
             'fields'         => [
                 [
                     'id'    => 'name',
@@ -270,6 +271,14 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                                 'submit_success_function' => Disciple_Tools_Bulk_Magic_Link_Sender_API::get_link_submission_success_js_code()
                             ]) ?>][0]
 
+            window.d = {
+                current_contact: {},
+                someother: '',
+                deleted_contacts: [],
+                default_details: 'a:1:{s:8:"verified";b:0;}'
+            }
+
+
             /**
              * Fetch assigned contacts
              */
@@ -306,7 +315,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
                     window.load_magic(data)
                 }).fail(function(e) {
-                    console.log(e)
+                    console.error(e)
                     jQuery('#error').html(e)
                     $('.api-content-table').show()
                     $('#apiContentLoader').hide()
@@ -330,8 +339,6 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
                 // Iterate over returned posts
                 if (data['posts']) {
-
-                    console.log(data['posts'])
                     data['posts'].forEach(v => {
 
                         const hasFb = v.facebook !== '' ? true : false
@@ -388,157 +395,184 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce);
                         xhr.setRequestHeader('Cache-Control', 'no-store');
                     }
-
                 }).done(function(data) {
+                    data['comment_count'] = comment_count;
 
                     // Was our post fetch request successful...?
                     if (data['success'] && data['post']) {
-
-                        // Display submit button
-                        jQuery('#content_submit_but').fadeIn('fast');
-
-                        // ID
-                        jQuery('#post_id').val(data['post']['ID']);
-
-                        // NAME
-                        let post_name = window.lodash.escape(data['post']['name']);
-                        jQuery('#contact_name').html(post_name);
-                        if (window.is_field_enabled('name')) {
-                            jQuery('#form_content_name_td').html(`
-                                <input id="post_name" type="text" value="${post_name}" />
-                                `);
-                        } else {
-                            jQuery('#form_content_name_tr').hide();
-                        }
-
-                        // MILESTONES
-                        if (window.is_field_enabled('milestones')) {
-                            let html_milestones = ``;
-                            jQuery.each(jsObject.milestones, function(idx, milestone) {
-
-                                // Determine button selection state
-                                let button_select_state = 'empty-select-button';
-                                if (data['post']['milestones'] && (data['post']['milestones'].indexOf(idx) > -1)) {
-                                    button_select_state = 'selected-select-button';
-                                }
-
-                                // Build button widget
-                                html_milestones += `<button id="${window.lodash.escape(idx)}"
-                                                            type="button"
-                                                            data-field-key="milestones"
-                                                            class="dt_multi_select ${button_select_state} button select-button">
-                                                        <img class="dt-icon" src="${window.lodash.escape(milestone['icon'])}"/>
-                                                        ${window.lodash.escape(milestone['label'])}
-                                                    </button>`;
-                            });
-                            jQuery('#form_content_milestones_td').html(html_milestones);
-
-                            // Respond to milestone button state changes
-                            jQuery('.dt_multi_select').on("click", function(evt) {
-                                let milestone = jQuery(evt.currentTarget);
-                                if (milestone.hasClass('empty-select-button')) {
-                                    milestone.removeClass('empty-select-button');
-                                    milestone.addClass('selected-select-button');
-                                } else {
-                                    milestone.removeClass('selected-select-button');
-                                    milestone.addClass('empty-select-button');
-                                }
-                            });
-                        } else {
-                            jQuery('#form_content_milestones_tr').hide();
-                        }
-
-                        // OVERALL_STATUS
-                        if (window.is_field_enabled('overall_status')) {
-                            let html_overall_status = `<select id="post_overall_status" class="select-field">`;
-                            jQuery.each(jsObject.overall_status, function(idx, overall_status) {
-
-                                // Determine selection state
-                                let select_state = '';
-                                if (data['post']['overall_status'] && (String(data['post']['overall_status']['key']) === String(idx))) {
-                                    select_state = 'selected';
-                                }
-
-                                // Add option
-                                html_overall_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(overall_status['label'])}</option>`;
-                            });
-                            html_overall_status += `</select>`;
-                            jQuery('#form_content_overall_status_td').html(html_overall_status);
-                        } else {
-                            jQuery('#form_content_overall_status_tr').hide();
-                        }
-
-                        // FAITH_STATUS
-                        if (window.is_field_enabled('faith_status')) {
-                            let html_faith_status = `<select id="post_faith_status" class="select-field">`;
-                            html_faith_status += `<option value=""></option>`;
-                            jQuery.each(jsObject.faith_status, function(idx, faith_status) {
-
-                                // Determine selection state
-                                let select_state = '';
-                                if (data['post']['faith_status'] && (String(data['post']['faith_status']['key']) === String(idx))) {
-                                    select_state = 'selected';
-                                }
-
-                                // Add option
-                                html_faith_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(faith_status['label'])}</option>`;
-                            });
-                            html_faith_status += `</select>`;
-                            jQuery('#form_content_faith_status_td').html(html_faith_status);
-                        } else {
-                            jQuery('#form_content_faith_status_tr').hide();
-                        }
-
-                        // CONTACT_PHONE
-                        if (window.is_field_enabled('contact_phone')) {
-                            if (data['post']['contact_phone']) {
-
-                                let phone_numbers = [];
-                                data['post']['contact_phone'].forEach(phone => {
-                                    phone_numbers.push(phone['value']);
-                                });
-
-                                jQuery('#form_content_contact_phone_td').html(phone_numbers.length > 0 ? phone_numbers.join(', ') : '');
-                            }
-                        } else {
-                            jQuery('#form_content_contact_phone_tr').hide();
-                        }
-
-                        // COMMENTS
-                        if (window.is_field_enabled('comments')) {
-                            let counter = 0;
-                            let html_comments = `<textarea></textarea><br>`;
-                            if (data['comments']['comments']) {
-                                data['comments']['comments'].forEach(comment => {
-                                    if (counter++ < comment_count) { // Enforce comment count limit..!
-                                        html_comments += `<b>${window.lodash.escape(comment['comment_author'])} @ ${window.lodash.escape(comment['comment_date'])}</b><br>`;
-                                        html_comments += `${window.lodash.escape(comment['comment_content'])}<hr>`;
-                                    }
-                                });
-                            }
-                            jQuery('#form_content_comments_td').html(html_comments);
-                        } else {
-                            jQuery('#form_content_comments_tr').hide();
-                        }
-
-                        // Display updated post fields
-                        jQuery('.form-content-table').show();
-
+                        window.generateForm(data)
                     } else {
                         // TODO: Error Msg...!
+                        window.generateForm()
                     }
 
                 }).fail(function(e) {
-                    console.log(e);
+                    console.error(e);
                     jQuery('#error').html(e);
                 });
             };
+
+            window.get_phone = (post_id) => {
+                // Dispatch request call
+                jQuery.ajax({
+                    type: "GET",
+                    data: {
+                        action: 'get',
+                        parts: jsObject.parts,
+                        sys_type: jsObject.sys_type,
+                        post_id: post_id,
+                        ts: moment().unix() // Alter url shape, so as to force cache refresh!
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/get_phone',
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce);
+                        xhr.setRequestHeader('Cache-Control', 'no-store');
+                    }
+
+                }).done(function(data) {
+                    window.d.current_contact.contact_phone = [...data]
+                    window.renderPhone(post_id, data)
+                }).fail(function(e) {
+                    console.error(e);
+                    jQuery('#error').html(e);
+                });
+            };
+
+            window.generateForm = (data = null) => {
+                let comment_count = 0;
+                if (data !== null) {
+                    comment_count = data['comment_count'];
+                }
+
+                // Display submit button
+                jQuery('#content_submit_but').fadeIn('fast');
+
+                // ID
+                jQuery('#post_id').val(data === null ? 0 : data['post']['ID']);
+
+                // NAME
+                let post_name = window.lodash.escape(data === null ? '' : data['post']['name']);
+                jQuery('#contact_name').html(post_name);
+                if (window.is_field_enabled('name')) {
+                    jQuery('#form_content_name_td').html(`
+                  <input id="post_name" type="text" value="${post_name}" />
+                  `);
+                } else {
+                    jQuery('#form_content_name_tr').hide();
+                }
+
+                // MILESTONES
+                if (window.is_field_enabled('milestones')) {
+                    let html_milestones = ``;
+                    jQuery.each(jsObject.milestones, function(idx, milestone) {
+
+                        // Determine button selection state
+                        let button_select_state = 'empty-select-button';
+                        if (data !== null && data['post']['milestones'] && (data['post']['milestones'].indexOf(idx) > -1)) {
+                            button_select_state = 'selected-select-button';
+                        }
+
+                        // Build button widget
+                        html_milestones += `<button id="${window.lodash.escape(idx)}"
+                                              type="button"
+                                              data-field-key="milestones"
+                                              class="dt_multi_select ${button_select_state} button select-button">
+                                          <img class="dt-icon" src="${window.lodash.escape(milestone['icon'])}"/>
+                                          ${window.lodash.escape(milestone['label'])}
+                                      </button>`;
+                    });
+                    jQuery('#form_content_milestones_td').html(html_milestones);
+
+                    // Respond to milestone button state changes
+                    jQuery('.dt_multi_select').on("click", function(evt) {
+                        let milestone = jQuery(evt.currentTarget);
+                        if (milestone.hasClass('empty-select-button')) {
+                            milestone.removeClass('empty-select-button');
+                            milestone.addClass('selected-select-button');
+                        } else {
+                            milestone.removeClass('selected-select-button');
+                            milestone.addClass('empty-select-button');
+                        }
+                    });
+                } else {
+                    jQuery('#form_content_milestones_tr').hide();
+                }
+
+                // OVERALL_STATUS
+                if (window.is_field_enabled('overall_status')) {
+                    let html_overall_status = `<select id="post_overall_status" class="select-field">`;
+                    jQuery.each(jsObject.overall_status, function(idx, overall_status) {
+
+                        // Determine selection state
+                        let select_state = '';
+                        if (data !== null && data['post']['overall_status'] && (String(data['post']['overall_status']['key']) === String(idx))) {
+                            select_state = 'selected';
+                        }
+
+                        // Add option
+                        html_overall_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(overall_status['label'])}</option>`;
+                    });
+                    html_overall_status += `</select>`;
+                    jQuery('#form_content_overall_status_td').html(html_overall_status);
+                } else {
+                    jQuery('#form_content_overall_status_tr').hide();
+                }
+
+                // FAITH_STATUS
+                if (window.is_field_enabled('faith_status')) {
+                    let html_faith_status = `<select id="post_faith_status" class="select-field">`;
+                    html_faith_status += `<option value=""></option>`;
+                    jQuery.each(jsObject.faith_status, function(idx, faith_status) {
+
+                        // Determine selection state
+                        let select_state = '';
+                        if (data !== null && data['post']['faith_status'] && (String(data['post']['faith_status']['key']) === String(idx))) {
+                            select_state = 'selected';
+                        }
+
+                        // Add option
+                        html_faith_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(faith_status['label'])}</option>`;
+                    });
+                    html_faith_status += `</select>`;
+                    jQuery('#form_content_faith_status_td').html(html_faith_status);
+                } else {
+                    jQuery('#form_content_faith_status_tr').hide();
+                }
+
+                // CONTACT_PHONE
+                if (window.is_field_enabled('contact_phone')) {
+                    window.get_phone(data !== null ? data['post']['ID'] : null)
+                } else {
+                    jQuery('#form_content_contact_phone_tr').hide();
+                }
+
+                // COMMENTS
+                if (window.is_field_enabled('comments')) {
+                    let counter = 0;
+                    let html_comments = `<textarea></textarea><br>`;
+                    if (data !== null && data['comments']['comments']) {
+                        data['comments']['comments'].forEach(comment => {
+                            if (counter++ < comment_count) { // Enforce comment count limit..!
+                                html_comments += `<b>${window.lodash.escape(comment['comment_author'])} @ ${window.lodash.escape(comment['comment_date'])}</b><br>`;
+                                html_comments += `${window.lodash.escape(comment['comment_content'])}<hr>`;
+                            }
+                        });
+                    }
+                    jQuery('#form_content_comments_td').html(html_comments);
+                } else {
+                    jQuery('#form_content_comments_tr').hide();
+                }
+
+                // Display updated post fields
+                jQuery('.form-content-table').show();
+            }
 
             /**
              * Determine if field has been enabled
              */
             window.is_field_enabled = (field_id) => {
-
                 // Enabled by default
                 let enabled = true;
 
@@ -630,7 +664,36 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         payload['faith_status'] = String(jQuery('#post_faith_status').val()).trim();
                     }
                     if (window.is_field_enabled('contact_phone')) {
-                        // Ignored, as field currently shown in a read-only capacity!
+                        const cphone = {
+                            deletedPhones: [],
+                            newPhones: [],
+                            changedPhones: []
+                        }
+
+                        $('.wrap-input-phone').each(function(index) {
+                            const xx = {
+                                meta_id: $(this).data('meta_id'),
+                                meta_key: $(this).data('meta_key'),
+                                meta_value: $(this).find('.contact_phone_numbers').val()
+                            }
+
+                            if ($(this).data('meta_id') === 'new') {
+                                xx.random = Math.random().toString(16).substr(2, 3)
+                                xx.details = window.d.default_details
+                            }
+
+                            cphone[$(this).data('meta_id') === 'new' ? 'newPhones' : 'changedPhones'].push(xx)
+                        })
+
+                        window.d.current_contact.contact_phone.forEach(cp => {
+                            if (cp.is_deleted === true) {
+                                cphone.deletedPhones.push(cp.meta_id)
+                            }
+                        })
+
+                        payload['contact_phone'] = {
+                            ...cphone
+                        }
                     }
                     if (window.is_field_enabled('comments')) {
                         payload['comments'] = jQuery('#form_content_comments_td').find('textarea').eq(0).val();
@@ -648,9 +711,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         beforeSend: function(xhr) {
                             xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
                         }
-
                     }).done(function(data) {
-
                         // If successful, refresh page, otherwise; display error message
                         if (data['success']) {
                             Function(jsObject.submit_success_function)();
@@ -663,7 +724,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         }
 
                     }).fail(function(e) {
-                        console.log(e);
+                        console.error(e);
                         jQuery('#error').html(e);
                         jQuery('#content_submit_but').prop('disabled', false);
                     });
@@ -705,12 +766,61 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         shown: false
                     }
                 }
-            };
+            }
+
+            window.renderPhone = (post_id, data) => {
+                let ph_html = '';
+
+                data.forEach(phone => {
+                    if (!phone.meta_key.includes('details')) {
+                        const idx = data.findIndex(p => p.meta_id === phone.meta_id)
+                        const details = data[data.findIndex(p => p.meta_key.match(phone.meta_key) && p.meta_key.includes('details'))]
+                        ph_html += `<div class="wrap-input-phone" data-idx="${idx}" data-meta_id="${phone.meta_id}" data-meta_key="${phone.meta_key}" data-meta_details="${details.meta_value}" data-meta_detail_id="${details.meta_id}"><div style="width: ${idx > 0 ? 'calc(100% - 50px)' : '100%'}; display: inline-block;"><input type="text" class="contact_phone_numbers" value="${phone.meta_value}" /></div>${idx > 0 ? `<div class="contact-phone-remover" style="display: inline-block; width: 50px; text-align: center; cursor: pointer;" data-idx="${idx}">x</div>` : ''}</div>`;
+                    }
+                });
+
+                jQuery('#form_content_contact_phone_td').html(data.length > 0 ? ph_html : '<div class="wrap-input-phone"><input type="text" class="contact_phone_numbers" value="" placeholder="Contact Phone Number" /></div>');
+                jQuery('#form_content_contact_phone_td').append('<div><button type="button" class="button" id="btn_AddNewPhoneNumber">+</button></div>')
+
+                $('#btn_AddNewPhoneNumber').on('click', function(e) {
+                    const lastIdx = Number($('.wrap-input-phone:last-of-type').data('idx')) + 1
+                    $('#btn_AddNewPhoneNumber').before(`<div class="wrap-input-phone" data-idx="${lastIdx}" data-meta_id="new" data-meta_key="new" data-meta_details="new"><div style="width: calc(100% - 50px); display: inline-block;"><input type="text" class="contact_phone_numbers" class="contact_phone_numbers" value="" placeholder="Contact Phone Number" /></div><div class="contact-phone-remover" style="display: inline-block; width: 50px; text-align: center; cursor: pointer;" data-idx="${lastIdx}">x</div></div>`)
+
+                    $('.contact-phone-remover').on('click', function() {
+                        const d = $(`.wrap-input-phone[data-idx=${$(this).data('idx')}]`)
+                        const xx = window.d.current_contact.contact_phone.find(cp => cp.meta_id === d.data('meta_id'))
+
+                        if (d.data('meta_id') !== 'new') {
+                            window.d.deleted_contacts.push(d.data('meta_id'))
+                            window.d.deleted_contacts.push(d.data('meta_detail_id'))
+                        }
+
+                        d.remove()
+                    });
+                });
+
+                $('.contact-phone-remover').on('click', function() {
+                    const d = $(`.wrap-input-phone[data-idx=${$(this).data('idx')}]`)
+                    window.d.current_contact.contact_phone.find(cp => cp.meta_id === d.data('meta_id').toString()).is_deleted = true
+                    window.d.current_contact.contact_phone.find(cp => cp.meta_id === d.data('meta_detail_id').toString()).is_deleted = true
+
+                    if (d.data('meta_id') !== 'new') {
+                        window.d.deleted_contacts.push(d.data('meta_id'))
+                        window.d.deleted_contacts.push(d.data('meta_detail_id'))
+                    }
+
+                    d.remove()
+                });
+            }
 
             $('#txtSearch').on('keypress', function(e) {
                 if (e.which === 13) {
                     window.get_magic($('#txtSearch').val())
                 }
+            });
+
+            $('#add_new').on('click', function(e) {
+                window.get_contact(0);
             });
         </script>
     <?php
@@ -721,6 +831,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
     {
         // Revert back to dt translations
         $this->hard_switch_to_default_dt_text_domain();
+        $link_obj = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_option_link_obj($this->fetch_incoming_link_param('id'));
+
     ?>
         <div id="custom-style"></div>
         <div id="wrapper">
@@ -829,6 +941,13 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                     <?php esc_html_e("Submit Update", 'disciple_tools') ?>
                 </button>
             </div>
+
+            <!-- btn add new -->
+            <?php if (isset($link_obj) && property_exists($link_obj, 'type_config') && property_exists($link_obj->type_config, 'supports_create') && $link_obj->type_config->supports_create) : ?>
+                <button id="add_new" class="button select-button">
+                    <?php esc_html_e("Add New", 'disciple_tools') ?>
+                </button>
+            <?php endif; ?> <!-- e.o btn add new -->
         </div>
 <?php
     }
@@ -883,6 +1002,27 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 [
                     'methods'             => "GET",
                     'callback'            => [$this, 'update_record'],
+                    'permission_callback' => function (WP_REST_Request $request) {
+                        $magic = new DT_Magic_URL($this->root);
+
+                        /**
+                         * Adjust global values accordingly, so as to accommodate both wp_user
+                         * and post requests.
+                         */
+                        $this->adjust_global_values_by_incoming_sys_type($request->get_params()['sys_type']);
+
+                        return $magic->verify_rest_endpoint_permissions_on_post($request);
+                    },
+                ],
+            ]
+        );
+        register_rest_route(
+            $namespace,
+            '/' . $this->type . '/get_phone',
+            [
+                [
+                    'methods'             => "GET",
+                    'callback'            => [$this, 'get_phone'],
                     'permission_callback' => function (WP_REST_Request $request) {
                         $magic = new DT_Magic_URL($this->root);
 
@@ -1020,6 +1160,47 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
         }
 
         // Capture faith status
+        if (isset($params['contact_phone']) && !empty($params['contact_phone'])) {
+            global $wpdb;
+
+            // delete
+            foreach ($params['contact_phone']['deletedPhones'] as $dp) {
+                $wpdb->delete($wpdb->prefix . 'postmeta', ['meta_id' => (int)$dp]);
+            }
+
+            // change
+            foreach ($params['contact_phone']['changedPhones'] as $cp) {
+
+                $wpdb->update(
+                    $wpdb->prefix . 'postmeta',
+                    ['meta_value' => $cp['meta_value']],
+                    ['meta_id' => $cp['meta_id']]
+                );
+            }
+
+            // add
+            foreach ($params['contact_phone']['newPhones'] as $np) {
+                $wpdb->insert(
+                    $wpdb->prefix . 'postmeta',
+                    array(
+                        'post_id' => $params['post_id'],
+                        'meta_key' => 'contact_phone_' . $np['random'],
+                        'meta_value' => $np['meta_value']
+                    )
+                );
+
+                $wpdb->insert(
+                    $wpdb->prefix . 'postmeta',
+                    array(
+                        'post_id' => $params['post_id'],
+                        'meta_key' => 'contact_phone_' . $np['random'] . '_details',
+                        'meta_value' => $np['details']
+                    )
+                );
+            }
+        }
+
+        // Capture faith status
         if (isset($params['faith_status'])) {
             $updates['faith_status'] = $params['faith_status'];
         }
@@ -1043,11 +1224,20 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
         }
 
         // Update specified post record
-        $updated_post = DT_Posts::update_post('contacts', $params['post_id'], $updates, false, false);
-        if (empty($updated_post) || is_wp_error($updated_post)) {
+        if ((int)$params['post_id'] !== 0) {
+            $updated_post = DT_Posts::update_post('contacts', $params['post_id'], $updates, false, false);
+            if (empty($updated_post) || is_wp_error($updated_post)) {
+                return [
+                    'success' => false,
+                    'post_id' => gettype($params['post_id']),
+                    'message' => 'Unable to update contact record details!'
+                ];
+            }
+        } else {
+            $updated_post = DT_Posts::create_post('contacts', $updates, false, false);
             return [
-                'success' => false,
-                'message' => 'Unable to update contact record details!'
+                'success' => true,
+                'message' => 'New contact created.'
             ];
         }
 
@@ -1065,8 +1255,25 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
         // Finally, return successful response
         return [
             'success' => true,
-            'message' => ''
+            'message' => 'Successfully Updated Contact Detail.',
         ];
+    }
+
+    public function get_phone(WP_REST_Request $request)
+    {
+        $params = $request->get_params();
+        if (!isset($params['post_id'], $params['parts'], $params['action'])) {
+            return new WP_Error(__METHOD__, "Missing parameters", ['status' => 400]);
+        }
+
+        $params = dt_recursive_sanitize_array($params);
+        if (!is_user_logged_in()) {
+            $this->update_user_logged_in_state($params['sys_type'], $params["parts"]["post_id"]);
+        }
+
+        global $wpdb;
+        $wpdb->post_id = $params["post_id"];
+        return $wpdb->get_results("SELECT * FROM $wpdb->postmeta WHERE post_id = $wpdb->post_id AND meta_key LIKE 'contact_phone%';", ARRAY_A);
     }
 
     public function update_user_logged_in_state($sys_type, $user_id)
