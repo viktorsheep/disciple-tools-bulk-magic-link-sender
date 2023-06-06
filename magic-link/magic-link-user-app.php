@@ -339,16 +339,14 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
                 // Iterate over returned posts
                 if (data['posts']) {
-                    data['posts'].forEach(v => {
+                    const sortedPosts = data.posts.sort((a, b) => b.created_timestamp - a.created_timestamp)
+                    sortedPosts.forEach(v => {
 
                         const hasFb = v.facebook !== '' ? true : false
                         const fb = {
                             id: hasFb ? v.facebook.page_scoped_ids[0] : ''
                         }
 
-                        const strFacebookLink = `
-										`
-                        //let html = `<tr onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">
                         let html = `<tr>
                         <td onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">${window.lodash.escape(v.name)}</td>
                         <td style="width: 220px;">${window.lodash.escape(v.last_modified)}</td>
@@ -716,6 +714,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         if (data['success']) {
                             Function(jsObject.submit_success_function)();
                             $('#content_submit_but').prop('disabled', false)
+                            window.get_magic()
                             window.get_contact(payload.post_id)
 
                         } else {
@@ -779,7 +778,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                     }
                 });
 
-                jQuery('#form_content_contact_phone_td').html(data.length > 0 ? ph_html : '<div class="wrap-input-phone"><input type="text" class="contact_phone_numbers" value="" placeholder="Contact Phone Number" /></div>');
+                jQuery('#form_content_contact_phone_td').html(data.length > 0 ? ph_html : '<div class="wrap-input-phone" data-idx="0" data-meta_id="new" data-meta_key="new" deta-meta_details="new"><input type="text" class="contact_phone_numbers" value="" placeholder="Contact Phone Number" /></div>');
                 jQuery('#form_content_contact_phone_td').append('<div><button type="button" class="button" id="btn_AddNewPhoneNumber">+</button></div>')
 
                 $('#btn_AddNewPhoneNumber').on('click', function(e) {
@@ -1095,7 +1094,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         'id'   => $post['ID'],
                         'name' => $post['name'],
                         'last_modified' => $post['last_modified']['formatted'],
-                        'facebook' => isset($post['facebook_data']) ? $post['facebook_data'] : ''
+                        'facebook' => isset($post['facebook_data']) ? $post['facebook_data'] : '',
+                        'created_timestamp' => $post['post_date']['timestamp']
                     ];
                 }
             }
@@ -1160,47 +1160,6 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
         }
 
         // Capture faith status
-        if (isset($params['contact_phone']) && !empty($params['contact_phone'])) {
-            global $wpdb;
-
-            // delete
-            foreach ($params['contact_phone']['deletedPhones'] as $dp) {
-                $wpdb->delete($wpdb->prefix . 'postmeta', ['meta_id' => (int)$dp]);
-            }
-
-            // change
-            foreach ($params['contact_phone']['changedPhones'] as $cp) {
-
-                $wpdb->update(
-                    $wpdb->prefix . 'postmeta',
-                    ['meta_value' => $cp['meta_value']],
-                    ['meta_id' => $cp['meta_id']]
-                );
-            }
-
-            // add
-            foreach ($params['contact_phone']['newPhones'] as $np) {
-                $wpdb->insert(
-                    $wpdb->prefix . 'postmeta',
-                    array(
-                        'post_id' => $params['post_id'],
-                        'meta_key' => 'contact_phone_' . $np['random'],
-                        'meta_value' => $np['meta_value']
-                    )
-                );
-
-                $wpdb->insert(
-                    $wpdb->prefix . 'postmeta',
-                    array(
-                        'post_id' => $params['post_id'],
-                        'meta_key' => 'contact_phone_' . $np['random'] . '_details',
-                        'meta_value' => $np['details']
-                    )
-                );
-            }
-        }
-
-        // Capture faith status
         if (isset($params['faith_status'])) {
             $updates['faith_status'] = $params['faith_status'];
         }
@@ -1234,11 +1193,49 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 ];
             }
         } else {
+            $updates['type'] = 'access';
             $updated_post = DT_Posts::create_post('contacts', $updates, false, false);
-            return [
-                'success' => true,
-                'message' => 'New contact created.'
-            ];
+        }
+
+        // Capture faith status
+        if (isset($params['contact_phone']) && !empty($params['contact_phone'])) {
+            global $wpdb;
+
+            // delete
+            foreach ($params['contact_phone']['deletedPhones'] as $dp) {
+                $wpdb->delete($wpdb->prefix . 'postmeta', ['meta_id' => (int)$dp]);
+            }
+
+            // change
+            foreach ($params['contact_phone']['changedPhones'] as $cp) {
+
+                $wpdb->update(
+                    $wpdb->prefix . 'postmeta',
+                    ['meta_value' => $cp['meta_value']],
+                    ['meta_id' => $cp['meta_id']]
+                );
+            }
+
+            // add
+            foreach ($params['contact_phone']['newPhones'] as $np) {
+                $wpdb->insert(
+                    $wpdb->prefix . 'postmeta',
+                    array(
+                        'post_id' => $updated_post['ID'],
+                        'meta_key' => 'contact_phone_' . $np['random'],
+                        'meta_value' => $np['meta_value']
+                    )
+                );
+
+                $wpdb->insert(
+                    $wpdb->prefix . 'postmeta',
+                    array(
+                        'post_id' => $updated_post['ID'],
+                        'meta_key' => 'contact_phone_' . $np['random'] . '_details',
+                        'meta_value' => $np['details']
+                    )
+                );
+            }
         }
 
         // Add any available comments
@@ -1255,7 +1252,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
         // Finally, return successful response
         return [
             'success' => true,
-            'message' => 'Successfully Updated Contact Detail.',
+            'message' => 'Successfully ' . (int)$params['post_id'] !== 0 ? 'Updated' : 'Created' . ' Contact Detail.'
         ];
     }
 
