@@ -283,10 +283,11 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
              * Fetch assigned contacts
              */
             window.get_magic = (searchWord = '') => {
-
                 const payload = {
                     action: 'get',
-                    parts: jsObject.parts
+                    parts: jsObject.parts,
+                    sys_type: jsObject.sys_type,
+                    ts: moment().unix() // Alter url shape, so as to force cache refresh!
                 }
 
                 if (searchWord.length > 0) {
@@ -711,12 +712,12 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         }
                     }).done(function(data) {
                         // If successful, refresh page, otherwise; display error message
+
                         if (data['success']) {
                             Function(jsObject.submit_success_function)();
                             $('#content_submit_but').prop('disabled', false)
-                            window.get_magic()
+                            window.load_magic(data.post)
                             window.get_contact(payload.post_id)
-
                         } else {
                             jQuery('#error').html(data['message']);
                             jQuery('#content_submit_but').prop('disabled', false);
@@ -1195,6 +1196,13 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
         } else {
             $updates['type'] = 'access';
             $updated_post = DT_Posts::create_post('contacts', $updates, false, false);
+
+            if (empty($updated_post) || is_wp_error($updated_post)) {
+                return [
+                    'success' => false,
+                    'message' => 'Unable to create contact record!'
+                ];
+            }
         }
 
         // Capture faith status
@@ -1249,9 +1257,12 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
             }
         }
 
+        $post = self::endpoint_get($request);
+
         // Finally, return successful response
         return [
             'success' => true,
+            'post' => $post,
             'message' => 'Successfully ' . (int)$params['post_id'] !== 0 ? 'Updated' : 'Created' . ' Contact Detail.'
         ];
     }
