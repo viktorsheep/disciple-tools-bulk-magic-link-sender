@@ -350,17 +350,17 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
                         let html = `<tr>
                         <td onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">${window.lodash.escape(v.name)}</td>
-                        <td style="width: 220px;">${window.lodash.escape(v.last_modified)}</td>
-												<td style="text-align:center;">
-												${ jsObject.ekballo_chat_url !== '' || jsObject.ekballo_chat_url !== false
-												?
-												(hasFb
-													? `<a href="${ hasFb ? jsObject.ekballo_chat_url + '/#/magic_link?psid=' + fb.id : '#' }" target="_blank" style="font-size: 24px;">
-														<i class="fi-comments" style="color: rgb(31, 145, 242);"></i>
-														</a>`
-													: '<i class="fi-comments" style="color: #999; font-size: 24px;"></i>')
-												: ''}
-												</td>
+                        <td onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');" style="width: 150px;">${window.lodash.escape(v.last_modified)}</td>
+                        <td style="text-align:center; width:100px;">
+                            ${ jsObject.ekballo_chat_url !== '' || jsObject.ekballo_chat_url !== false
+                            ?
+                            (hasFb
+                            	? `<a href="${ hasFb ? jsObject.ekballo_chat_url + '/#/magic_link?psid=' + fb.id : '#' }" target="_blank" style="font-size: 24px;">
+                            		<i class="fi-comments" style="color: rgb(31, 145, 242);"></i>
+                            		</a>`
+                            	: '<i class="fi-comments" style="color: #999; font-size: 24px;"></i>')
+                            : ''}
+                        </td>
                         </tr>`;
 
                         table.find('tbody').append(html);
