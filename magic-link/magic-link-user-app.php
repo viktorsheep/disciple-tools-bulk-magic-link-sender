@@ -85,7 +85,16 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 [
                     'id'    => 'comments',
                     'label' => __('Comments', 'disciple_tools') // Special Case!
-                ]
+                ],
+
+                [
+                    'id'    => 'seeker_path',
+                    'label' => __('Seeker Path', 'disciple_tools') // Special Case!
+                ],
+                [
+                    'id'    => 'location_grid_meta', // Special Case!
+                    'label' => __('Address / Location', 'disciple_tools')
+                ],
             ],
             'fields_refresh' => [
                 'enabled'    => true,
@@ -145,6 +154,12 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
     {
         // @todo add or remove js files with this filter
 
+        $allowed_js[] = 'google-search-widget';
+        $allowed_js[] = 'mapbox-gl';
+        $allowed_js[] = 'mapbox-cookie';
+        $allowed_js[] = 'mapbox-search-widget';
+        $allowed_js[] = 'jquery-typehead';
+        $allowed_js[] = 'dtwc-form-components';
         $allowed_js[] = 'toastify-js';
 
         return $allowed_js;
@@ -154,6 +169,10 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
     {
         // @todo add or remove js files with this filter
 
+        $allowed_css[] = 'mapbox-gl-css';
+        $allowed_css[] = 'jquery-typehead-css';
+        $allowed_css[] = 'material-font-icons-css';
+        $allowed_css[] = 'dtwc-light-css';
         $allowed_css[] = 'toastify-js-css';
 
         return $allowed_css;
@@ -161,6 +180,11 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
     public function wp_enqueue_scripts()
     {
+        if (DT_Mapbox_API::get_key()) {
+            DT_Mapbox_API::load_mapbox_header_scripts();
+            DT_Mapbox_API::load_mapbox_search_widget();
+        }
+
         wp_enqueue_style('toastify-js-css', 'https://cdn.jsdelivr.net/npm/toastify-js@1.12.0/src/toastify.min.css', [], '1.12.0');
         wp_enqueue_style('micon', 'https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0', [], '1');
         wp_enqueue_style('dashicons');
@@ -205,6 +229,71 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
             body {
                 background-color: white;
                 padding: 1em;
+            }
+
+            #mapPreview {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.5);
+                z-index: 999999;
+                overflow: auto;
+                display: none;
+            }
+
+            #mapPreview.show {
+                display: block;
+            }
+
+            #mapPreview .content {
+                max-width: calc(100vw - 100px);
+                height: calc(100vh - 100px);
+                margin-top: 0px;
+                margin-left: 50px;
+                background: white;
+                opacity: 0;
+                border-radius: 20px;
+                padding: 20px;
+                padding-top: 10px;
+            }
+
+            #mapPreview.show .content {
+                opacity: 1;
+                margin-top: 50px;
+            }
+
+            #mapPreview .content .header {
+                height: 40px;
+            }
+
+            #mapPreview .content .header span {
+                display: inline-block;
+                height: 40px;
+                line-height: 40px;
+            }
+
+            #mapPreview .content .header button {
+                float: right;
+                height: 40px;
+                width: 45px;
+                opacity: .2;
+                font-size: 20px;
+            }
+
+            #mapPreview .content .header button:hover {
+                opacity: 1;
+            }
+
+            #mapPreview .content .body .wrap-map {
+                height: calc(100vh - 180px);
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            #mapPreview .content .body .wrap-map #mpMap {
+                height: 100%;
             }
 
             .api-content-div-style {
@@ -262,22 +351,36 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                                 'milestones'              => DT_Posts::get_post_field_settings('contacts')['milestones']['default'],
                                 'overall_status'          => DT_Posts::get_post_field_settings('contacts')['overall_status']['default'],
                                 'faith_status'            => DT_Posts::get_post_field_settings('contacts')['faith_status']['default'],
+                                'seeker_path'             => DT_Posts::get_post_field_settings('contacts')['seeker_path']['default'],
                                 'link_obj_id'             => Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_option_link_obj($this->fetch_incoming_link_param('id')),
                                 'sys_type'                => $this->fetch_incoming_link_param('type'),
                                 'ekballo_chat_url'                => get_option('ekballo_chat_url'),
                                 'translations'            => [
                                     'add' => __('Add Magic', 'disciple-tools-bulk-magic-link-sender'),
                                 ],
-                                'submit_success_function' => Disciple_Tools_Bulk_Magic_Link_Sender_API::get_link_submission_success_js_code()
+                                'submit_success_function' => Disciple_Tools_Bulk_Magic_Link_Sender_API::get_link_submission_success_js_code(),
+                                'mapbox'        => [
+                                    'map_key'        => DT_Mapbox_API::get_key(),
+                                    'google_map_key' => Disciple_Tools_Google_Geocode_API::get_key(),
+                                    'translations'   => [
+                                        'search_location' => __('Search Location', 'disciple_tools'),
+                                        'delete_location' => __('Delete Location', 'disciple_tools'),
+                                        'use'             => __('Use', 'disciple_tools'),
+                                        'open_modal'      => __('Open Modal', 'disciple_tools')
+                                    ]
+                                ],
                             ]) ?>][0]
 
             window.d = {
                 current_contact: {},
                 someother: '',
                 deleted_contacts: [],
-                default_details: 'a:1:{s:8:"verified";b:0;}'
+                default_details: 'a:1:{s:8:"verified";b:0;}',
+                lgms: {
+                    toDeletes: [],
+                    gpsVals: ''
+                }
             }
-
 
             /**
              * Fetch assigned contacts
@@ -351,16 +454,16 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                         let html = `<tr>
                         <td onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');">${window.lodash.escape(v.name)}</td>
                         <td onclick="get_assigned_contact_details('${window.lodash.escape(v.id)}', '${window.lodash.escape(v.name)}');" style="width: 150px;">${window.lodash.escape(v.last_modified)}</td>
-                        <td style="text-align:center; width:100px;">
-                            ${ jsObject.ekballo_chat_url !== '' || jsObject.ekballo_chat_url !== false
-                            ?
-                            (hasFb
-                            	? `<a href="${ hasFb ? jsObject.ekballo_chat_url + '/#/magic_link?psid=' + fb.id : '#' }" target="_blank" style="font-size: 24px;">
-                            		<i class="fi-comments" style="color: rgb(31, 145, 242);"></i>
-                            		</a>`
-                            	: '<i class="fi-comments" style="color: #999; font-size: 24px;"></i>')
-                            : ''}
-                        </td>
+						<td style="text-align:center; width: 100px;">
+							${ jsObject.ekballo_chat_url !== '' || jsObject.ekballo_chat_url !== false
+							?
+							(hasFb
+								? `<a href="${ hasFb ? jsObject.ekballo_chat_url + '/#/magic_link?psid=' + fb.id : '#' }" target="_blank" style="font-size: 24px;">
+									<i class="fi-comments" style="color: rgb(31, 145, 242);"></i>
+									</a>`
+								: '<i class="fi-comments" style="color: #999; font-size: 24px;"></i>')
+							: ''}
+						</td>
                         </tr>`;
 
                         table.find('tbody').append(html);
@@ -564,6 +667,198 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                     jQuery('#form_content_comments_tr').hide();
                 }
 
+                // SEEKER PATH
+                const seekerEl = {
+                    tr: jQuery('#form_content_seeker_path_tr'),
+                    td: jQuery('#form_content_seeker_path_td')
+                }
+
+                if (window.is_field_enabled('seeker_path')) {
+                    let html_faith_status = `<select id="post_seeker_path" class="select-field">`;
+                    html_faith_status += `<option value="">Select Seeker Path</option>`;
+                    jQuery.each(jsObject.seeker_path, function(idx, faith_status) {
+
+                        // Determine selection state
+                        let select_state = '';
+                        if (data !== null && data['post']['seeker_path'] && (String(data['post']['seeker_path']['key']) === String(idx))) {
+                            select_state = 'selected';
+                        }
+
+                        // Add option
+                        html_faith_status += `<option value="${window.lodash.escape(idx)}" ${select_state}>${window.lodash.escape(faith_status['label'])}</option>`;
+                    });
+                    html_faith_status += `</select>`;
+                    seekerEl.td.html(html_faith_status);
+                } else {
+                    seekerEl.tr.hide()
+                }
+
+                // LOCATION / ADDERSS
+                const locationEl = {
+                    tr: jQuery('#form_content_location_grid_meta_tr'),
+                    td: jQuery('#form_content_location_grid_meta_td')
+                }
+
+                if (window.is_field_enabled('location_grid_meta')) {
+                    const xx = `<div id="location-grid-meta-results"></div>
+						<button id="btnAddLocation" style="display: none;">Add Location</button>
+						<div class="reveal" id="mapping-modal" data-v-offset="0" data-reveal>
+						  <div id="mapping-modal-contents"></div>
+						  <button class="close-button" data-close aria-label="Close modal" type="button">
+						    <span aria-hidden="true">&times;</span>
+						  </button>
+						</div>`
+
+                    locationEl.td.find('#mapbox-wrapper').html(xx)
+
+                    // load previous saved locations
+                    let lgm_results = locationEl.td.find('#location-grid-meta-results');
+                    if (data['post']['location_grid_meta'] !== undefined && data['post']['location_grid_meta'].length !== 0) {
+                        jQuery.each(data['post']['location_grid_meta'], function(i, v) {
+                            if (v.grid_meta_id) {
+                                lgm_results.append(`<div class="input-group">
+									<input type="text" class="active-location input-group-field" id="location-${window.lodash.escape(v.grid_meta_id)}" dir="auto" value="${window.lodash.escape(v.label)}" readonly />
+										<div class="input-group-button">
+											<button
+												type="button"
+												class="button success delete-button-style open-mapping-grid-modal"
+												title="${window.lodash.escape(jsObject['mapbox']['translations']['open_modal'])}"
+												data-id="${window.lodash.escape(v.grid_meta_id)}"
+											>
+												<i class="fi-map"></i>
+											</button>
+
+											<button
+												type="button"
+												class="button alert delete-button-style delete-button mapbox-delete-button"
+												title="${window.lodash.escape(jsObject['mapbox']['translations']['delete_location'])}"
+												data-id="${window.lodash.escape(v.grid_meta_id)}"
+											>
+												&times;
+											</button>
+										</div>
+									</div>`);
+                            } else {
+                                lgm_results.append(`<div class="input-group">
+									<input type="text" class="dt-communication-channel input-group-field" id="${window.lodash.escape(v.key)}" value="${window.lodash.escape(v.label)}" dir="auto" data-field="contact_address" />
+									<div class="input-group-button">
+										<button type="button" class="button success delete-button-style open-mapping-address-modal"
+											title="${window.lodash.escape(jsObject['mapbox']['translation']['open_modal'])}"
+											data-id="${window.lodash.escape(v.grid_meta_id)}"
+											data-field="contact_address"
+											data-key="${window.lodash.escape(v.key)}">
+												<i class="fi-pencil"></i>
+										</button>
+										<button
+											type="button"
+											class="button alert input-height delete-button-style channel-delete-button delete-button"
+											title="${window.lodash.escape(jsObject['mapbox']['translations']['delete_location'])}"
+											data-id="${window.lodash.escape(v.key)}"
+											data-field="contact_address"
+											data-key="${window.lodash.escape(v.key)}"
+										>
+											&times;
+										</button>
+									</div>
+								</div>`);
+                            }
+                        })
+                    }
+
+                    // add
+                    $('#btnAddLocation').on('click', function() {
+                        console.log('lgm : add')
+                        if (locationEl.td.find('#mapbox-autocomplete').length === 0) {
+                            $('#mapbox-wrapper').prepend(`
+								<div>
+									<div id="mapbox-autocomplete" class="mapbox-autocomplete input-group" data-autosubmit="false" style="width: calc(100% - 50px); float: left;">
+										<input id="mapbox-search" type="text" name="mapbox_search" placeholder="${window.lodash.escape(jsObject['mapbox']['translations']['search_location'])}" autocomplete="off" dir="auto" />
+	                                	<div class="input-group-button">
+											<button id="mapbox-spinner-button" class="button hollow" style="display:none;"><span class="loading-spinner active"></span></button>
+											<button id="mapbox-spinner-button" class="button hollow"><span class="loading-spinner"></span></button>
+											<button
+												id="mapbox-clear-autocomplete"
+												class="button alert input-height delete-button-style mapbox-delete-button"
+												type="button" title="${window.lodash.escape(jsObject['mapbox']['translations']['delete_location'])}" >
+												&times;
+											</button>
+										</div>
+										<div id="mapbox-autocomplete-list" class="mapbox-autocomplete-items"></div>
+									</div>
+									<div style="width: 39px; float:right;">
+										<button id="btn_GetLocation" type="button" class="button" style="width: 100%;"><i class="fi-marker"></i></button>
+									</div>
+									<div style="clear: both;"></div>
+								</div>
+							`)
+                        }
+                        write_input_widget()
+                    })
+
+                    $('#btnAddLocation').trigger('click')
+
+                    // delete
+                    $('.mapbox-delete-button').on('click', evt => {
+                        console.log('lgm : delete')
+                        const me = $(evt.currentTarget)
+
+                        if (me.data('id') !== 'new') {
+                            window.d.lgms.toDeletes.push({
+                                grid_meta_id: me.data('id'),
+                                delete: true
+                            })
+
+                            me.parent().parent().remove()
+                        }
+                    })
+
+                    // open modal
+                    $('.open-mapping-grid-modal').on('click', e => {
+                        const dd = {
+                            mp: $('#mapPreview'),
+                            gmid: $(e.currentTarget).data('id'),
+                            lgm: data['post']['location_grid_meta'],
+                            zoom: 15
+                        }
+
+                        dd.mp.addClass('show')
+                        if (dd.lgm !== undefined && dd.lgm.length !== 0) {
+                            const gd = dd.lgm.find(lgm => lgm.grid_meta_id === dd.gmid.toString())
+                            dd.mp.find('.content .header .title').empty().append(gd.label)
+
+                            if (gd.level === 'admin0') {
+                                dd.zoom = 3
+                            } else if (gd.level === 'admin1') {
+                                dd.zoom = 6
+                            } else if (gd.level === 'admin2') {
+                                dd.zoom = 10
+                            }
+
+                            dd.mp.find('.content .body').find('#mpMap').empty()
+                            mapboxgl.accessToken = dtMapbox.map_key
+
+                            const map = new mapboxgl.Map({
+                                container: 'mpMap',
+                                style: 'mapbox://styles/mapbox/streets-v11',
+                                center: [gd.lng, gd.lat],
+                                minZoom: 1,
+                                zoom: dd.zoom
+                            })
+
+                            const marker = new mapboxgl.Marker().setLngLat([gd.lng, gd.lat]).addTo(map)
+                        }
+                    })
+
+                    $('#btn_GetLocation').on('click', e => {
+                        navigator.geolocation.getCurrentPosition(l => {
+                            fns.get.reverse_lookup(l.coords.longitude, l.coords.latitude)
+                        })
+                    })
+
+                } else {
+                    locationEl.tr.hide()
+                }
+
                 // Display updated post fields
                 jQuery('.form-content-table').show();
             }
@@ -697,9 +992,39 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                     if (window.is_field_enabled('comments')) {
                         payload['comments'] = jQuery('#form_content_comments_td').find('textarea').eq(0).val();
                     }
+                    if (window.is_field_enabled('seeker_path')) {
+                        if (jQuery('#post_seeker_path').val() !== '') {
+                            payload['seeker_path'] = String(jQuery('#post_seeker_path').val()).trim();
+                        }
+                    }
+
+                    if (window.is_field_enabled('location_grid_meta')) {
+                        const slgm = typeof window.selected_location_grid_meta !== 'undefined' ?
+                            window.selected_location_grid_meta.location_grid_meta :
+                            {
+                                values: []
+                            }
+
+                        if (typeof window.d.lgms.gpsVals !== 'string') {
+                            slgm.values.push(window.d.lgms.gpsVals)
+                        }
+
+                        const fmt = {
+                            values: [
+                                ...slgm.values,
+                                ...window.d.lgms.toDeletes
+                            ]
+                        }
+
+                        console.log(fmt)
+
+                        payload['location_grid_meta'] = fmt
+                    }
 
                     // Submit data for post update
                     jQuery('#content_submit_but').prop('disabled', true);
+
+                    console.log(payload)
 
                     jQuery.ajax({
                         type: "GET",
@@ -764,6 +1089,42 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                     hide() {},
                     d: {
                         shown: false
+                    }
+                },
+
+                get: {
+                    reverse_lookup(lng, lat) {
+                        jQuery.ajax({
+                            type: "GET",
+                            data: {
+                                action: 'get',
+                                parts: jsObject.parts,
+                                sys_type: jsObject.sys_type,
+                                //post_id: pid,
+                                lng: lng,
+                                lat: lat,
+                                ts: moment().unix() // Alter url shape, so as to force cache refresh!
+                            },
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/get_reverse_lookup',
+                            beforeSend: function(xhr) {
+                                xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
+                            }
+                        }).done(function(res) {
+                            $('#mapbox-search').val(res.features[0].place_name)
+
+                            window.d.lgms.gpsVals = {
+                                label: res.features[0].place_name,
+                                lat: lat,
+                                lng: lng,
+                                source: 'user',
+                            }
+                        }).fail(function(e) {
+                            console.error(e);
+                            jQuery('#error').html(e);
+                            jQuery('#content_submit_but').prop('disabled', false);
+                        });
                     }
                 }
             }
@@ -834,6 +1195,20 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
         $link_obj = Disciple_Tools_Bulk_Magic_Link_Sender_API::fetch_option_link_obj($this->fetch_incoming_link_param('id'));
 
     ?>
+        <div id="mapPreview">
+            <div class="content">
+                <div class="header">
+                    <span class="title"></span>
+                    <button type="button" class="btn-close" onclick="jQuery('#mapPreview').removeClass('show')">&times;</button>
+                </div>
+                <div class="body">
+                    <div class="wrap-map">
+                        <div id="mpMap"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div id="custom-style"></div>
         <div id="wrapper">
             <div class="grid-x">
@@ -908,30 +1283,51 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                                 </td>
                                 <td id="form_content_name_td"></td>
                             </tr>
+
                             <tr id="form_content_milestones_tr">
                                 <td style="vertical-align: top;">
                                     <b><?php echo esc_attr($field_settings['milestones']['name']); ?></b>
                                 </td>
                                 <td id="form_content_milestones_td"></td>
                             </tr>
+
                             <tr id="form_content_overall_status_tr">
                                 <td style="vertical-align: top;">
                                     <b><?php echo esc_attr($field_settings['overall_status']['name']); ?></b>
                                 </td>
                                 <td id="form_content_overall_status_td"></td>
                             </tr>
+
                             <tr id="form_content_faith_status_tr">
                                 <td style="vertical-align: top;">
                                     <b><?php echo esc_attr($field_settings['faith_status']['name']); ?></b>
                                 </td>
                                 <td id="form_content_faith_status_td"></td>
                             </tr>
+
+                            <tr id="form_content_seeker_path_tr">
+                                <td style="vertical-align: top;">
+                                    <b><? echo esc_attr($field_settings['seeker_path']['name']); ?></b>
+                                </td>
+                                <td id="form_content_seeker_path_td" />
+                            </tr>
+
+                            <tr id="form_content_location_grid_meta_tr">
+                                <td style="vertical-align: top;">
+                                    <b><? echo esc_attr($field_settings['location_grid_meta']['name']); ?></b>
+                                </td>
+                                <td id="form_content_location_grid_meta_td">
+                                    <div id="mapbox-wrapper" />
+                                </td>
+                            </tr>
+
                             <tr id="form_content_contact_phone_tr">
                                 <td style="vertical-align: top;">
                                     <b><?php echo esc_attr($field_settings['contact_phone']['name']); ?></b>
                                 </td>
                                 <td id="form_content_contact_phone_td"></td>
                             </tr>
+
                             <tr id="form_content_comments_tr">
                                 <td style="vertical-align: top;">
                                     <b><?php esc_html_e("Comments", 'disciple_tools') ?></b>
@@ -959,6 +1355,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
     public function add_endpoints()
     {
         $namespace = $this->root . '/v1';
+
+        // GET
         register_rest_route(
             $namespace,
             '/' . $this->type,
@@ -974,6 +1372,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 ],
             ]
         );
+
+        // POST
         register_rest_route(
             $namespace,
             '/' . $this->type . '/post',
@@ -995,6 +1395,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 ],
             ]
         );
+
+        // UPDATE
         register_rest_route(
             $namespace,
             '/' . $this->type . '/update',
@@ -1016,6 +1418,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 ],
             ]
         );
+
+        // GET PHONE
         register_rest_route(
             $namespace,
             '/' . $this->type . '/get_phone',
@@ -1023,6 +1427,29 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 [
                     'methods'             => "GET",
                     'callback'            => [$this, 'get_phone'],
+                    'permission_callback' => function (WP_REST_Request $request) {
+                        $magic = new DT_Magic_URL($this->root);
+
+                        /**
+                         * Adjust global values accordingly, so as to accommodate both wp_user
+                         * and post requests.
+                         */
+                        $this->adjust_global_values_by_incoming_sys_type($request->get_params()['sys_type']);
+
+                        return $magic->verify_rest_endpoint_permissions_on_post($request);
+                    },
+                ],
+            ]
+        );
+
+        // GET Reverse Lookup
+        register_rest_route(
+            $namespace,
+            '/' . $this->type . '/get_reverse_lookup',
+            [
+                [
+                    'methods'             => "GET",
+                    'callback'            => [$this, 'get_reverse_lookup'],
                     'permission_callback' => function (WP_REST_Request $request) {
                         $magic = new DT_Magic_URL($this->root);
 
@@ -1165,6 +1592,18 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
             $updates['faith_status'] = $params['faith_status'];
         }
 
+        // Capture seeker path
+        if (isset($params['seeker_path'])) {
+            $updates['seeker_path'] = $params['seeker_path'];
+        }
+
+        // Capture location grid id
+        if (isset($params['location_grid_meta'])) {
+            $locations = [];
+            $lgm = $params['location_grid_meta']['location_grid_meta'];
+            $updates['location_grid_meta'] = $params['location_grid_meta'];
+        }
+
         // Capture milestones
         if (isset($params['milestones'])) {
             $milestones = [];
@@ -1205,7 +1644,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
             }
         }
 
-        // Capture faith status
+        // Capture contact phone
         if (isset($params['contact_phone']) && !empty($params['contact_phone'])) {
             global $wpdb;
 
@@ -1297,6 +1736,21 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
                 wp_set_current_user($user_id);
                 break;
         }
+    }
+
+    public function get_reverse_lookup(WP_REST_Request $request)
+    {
+        $params = $request->get_params();
+        if (!isset($params['lat'], $params['lng'], $params['parts'], $params['action'])) {
+            return new WP_Error(__METHOD__, "Missing parameters", ['status' => 400]);
+        }
+
+        $params = dt_recursive_sanitize_array($params);
+        if (!is_user_logged_in()) {
+            $this->update_user_logged_in_state($params['sys_type'], $params["parts"]["post_id"]);
+        }
+
+        return DT_Mapbox_API::reverse_lookup($params['lng'], $params['lat']);
     }
 }
 
