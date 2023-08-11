@@ -448,7 +448,8 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
                         const hasFb = v.facebook !== '' ? true : false
                         const fb = {
-                            id: hasFb ? v.facebook.page_scoped_ids[0] : ''
+                            id: hasFb ? v.facebook.page_scoped_ids[0] : '',
+                            page_id: hasFb ? v.facebook.page_ids[0] : ''
                         }
 
                         let html = `<tr>
@@ -458,7 +459,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 							${ jsObject.ekballo_chat_url !== '' || jsObject.ekballo_chat_url !== false
 							?
 							(hasFb
-								? `<a href="${ hasFb ? jsObject.ekballo_chat_url + '/#/magic_link?psid=' + fb.id : '#' }" target="_blank" style="font-size: 24px;">
+								? `<a href="${ hasFb ? jsObject.ekballo_chat_url + '/#/magic_link?psid=' + fb.id + '&page_id=' + fb.page_id : '#' }" target="_blank" style="font-size: 24px;">
 									<i class="fi-comments" style="color: rgb(31, 145, 242);"></i>
 									</a>`
 								: '<i class="fi-comments" style="color: #999; font-size: 24px;"></i>')
@@ -713,7 +714,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
                     // load previous saved locations
                     let lgm_results = locationEl.td.find('#location-grid-meta-results');
-                    if (data['post']['location_grid_meta'] !== undefined && data['post']['location_grid_meta'].length !== 0) {
+                    if (data !== null && data['post']['location_grid_meta'] !== undefined && data['post']['location_grid_meta'].length !== 0) {
                         jQuery.each(data['post']['location_grid_meta'], function(i, v) {
                             if (v.grid_meta_id) {
                                 lgm_results.append(`<div class="input-group">
@@ -1000,8 +1001,7 @@ class Disciple_Tools_Magic_Links_Magic_User_App extends DT_Magic_Url_Base
 
                     if (window.is_field_enabled('location_grid_meta')) {
                         const slgm = typeof window.selected_location_grid_meta !== 'undefined' ?
-                            window.selected_location_grid_meta.location_grid_meta :
-                            {
+                            window.selected_location_grid_meta.location_grid_meta : {
                                 values: []
                             }
 
