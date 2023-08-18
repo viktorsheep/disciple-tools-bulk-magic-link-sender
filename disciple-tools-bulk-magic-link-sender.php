@@ -6,7 +6,7 @@
  * Description: Disciple Tools - Magic Links for users, contacts, groups and teams assignment + schedule management for magic links dispatching over configured sending channels.
  * Text Domain: ekballo-disciple-tools-bulk-magic-link-sender
  * Domain Path: /languages
- * Version:  1.10.1
+ * Version:  1.10.2
  * Author URI: https://github.com/viktorsheep
  * GitHub Plugin URI: https://github.com/viktorsheep/ekballo-disciple-tools-bulk-magic-link-sender
  * Requires at least: 4.7.0

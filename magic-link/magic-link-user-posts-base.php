@@ -672,14 +672,21 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                                 // Display search field with autosubmit disabled!
                                 if (jQuery(tr).find('#mapbox-autocomplete').length === 0) {
                                     jQuery(tr).find('#mapbox-wrapper').prepend(`
-                                    <div id="mapbox-autocomplete" class="mapbox-autocomplete input-group" data-autosubmit="false">
-                                        <input id="mapbox-search" type="text" name="mapbox_search" placeholder="${window.lodash.escape(jsObject['mapbox']['translations']['search_location'])}" autocomplete="off" dir="auto" />
-                                        <div class="input-group-button">
-                                            <button id="mapbox-spinner-button" class="button hollow" style="display:none;"><span class="loading-spinner active"></span></button>
-                                            <button id="mapbox-clear-autocomplete" class="button alert input-height delete-button-style mapbox-delete-button" type="button" title="${window.lodash.escape(jsObject['mapbox']['translations']['delete_location'])}" >&times;</button>
-                                        </div>
-                                        <div id="mapbox-autocomplete-list" class="mapbox-autocomplete-items"></div>
-                                    </div>`);
+										<div>
+											<div id="mapbox-autocomplete" class="mapbox-autocomplete input-group" data-autosubmit="false" style="width: calc(100% - 50px); float: left;">
+                                        		<input id="mapbox-search" type="text" name="mapbox_search" placeholder="${window.lodash.escape(jsObject['mapbox']['translations']['search_location'])}" autocomplete="off" dir="auto" />
+                                        		<div class="input-group-button">
+                                        		    <button id="mapbox-spinner-button" class="button hollow" style="display:none;"><span class="loading-spinner active"></span></button>
+                                        		    <button id="mapbox-clear-autocomplete" class="button alert input-height delete-button-style mapbox-delete-button" type="button" title="${window.lodash.escape(jsObject['mapbox']['translations']['delete_location'])}" >&times;</button>
+                                        		</div>
+												<div id="mapbox-autocomplete-list" class="mapbox-autocomplete-items"></div>
+											</div>
+											<div style="width: 39px; float:right;">
+												<button id="btn_GetLocation" type="button" class="button" style="width: 100%;"><i class="fi-marker"></i></button>
+											</div>
+											<div style="clear: both;"></div>
+										</div>
+										`);
                                 }
 
                                 // Switch over to standard workflow, with autosubmit disabled!
@@ -752,6 +759,12 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                                     const marker = new mapboxgl.Marker().setLngLat([gridData.lng, gridData.lat]).addTo(map)
                                 }
                             });
+
+                            $('#btn_GetLocation').on('click', e => {
+                                navigator.geolocation.getCurrentPosition(l => {
+                                    fns.get.reverse_lookup(l.coords.longitude, l.coords.latitude)
+                                })
+                            })
 
                             break;
                     }
@@ -1042,6 +1055,53 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
 
                     d: {
                         shown: false
+                    }
+                },
+
+                get: {
+                    reverse_lookup(lng, lat) {
+                        jQuery.ajax({
+                            type: "GET",
+                            data: {
+                                action: 'get',
+                                parts: jsObject.parts,
+                                sys_type: jsObject.sys_type,
+                                //post_id: pid,
+                                lng: lng,
+                                lat: lat,
+                                ts: moment().unix() // Alter url shape, so as to force cache refresh!
+                            },
+                            contentType: "application/json; charset=utf-8",
+                            dataType: "json",
+                            url: jsObject.root + jsObject.parts.root + '/v1/' + jsObject.parts.type + '/get_reverse_lookup',
+                            beforeSend: function(xhr) {
+                                xhr.setRequestHeader('X-WP-Nonce', jsObject.nonce)
+                            }
+                        }).done(function(res) {
+                            $('#mapbox-search').val(res.features[0].place_name)
+
+                            window.selected_location_grid_meta = {
+                                location_grid_meta: {
+                                    values: [{
+                                        label: res.features[0].place_name,
+                                        lat: lat,
+                                        lng: lng,
+                                        source: 'user',
+                                    }]
+                                }
+                            }
+
+                            window.d.lgms.gpsVals = {
+                                label: res.features[0].place_name,
+                                lat: lat,
+                                lng: lng,
+                                source: 'user',
+                            }
+                        }).fail(function(e) {
+                            console.error(e);
+                            jQuery('#error').html(e);
+                            jQuery('#content_submit_but').prop('disabled', false);
+                        });
                     }
                 }
             };
@@ -1552,6 +1612,29 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 ],
             ]
         );
+
+        // GET Reverse Lookup
+        register_rest_route(
+            $namespace,
+            '/' . $this->type . '/get_reverse_lookup',
+            [
+                [
+                    'methods'             => "GET",
+                    'callback'            => [$this, 'get_reverse_lookup'],
+                    'permission_callback' => function (WP_REST_Request $request) {
+                        $magic = new DT_Magic_URL($this->root);
+
+                        /**
+                         * Adjust global values accordingly, so as to accommodate both wp_user
+                         * and post requests.
+                         */
+                        $this->adjust_global_values_by_incoming_sys_type($request->get_params()['sys_type']);
+
+                        return $magic->verify_rest_endpoint_permissions_on_post($request);
+                    },
+                ],
+            ]
+        );
     }
 
     public function endpoint_get(WP_REST_Request $request)
@@ -1923,5 +2006,20 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 wp_set_current_user($user_id);
                 break;
         }
+    }
+
+    public function get_reverse_lookup(WP_REST_Request $request)
+    {
+        $params = $request->get_params();
+        if (!isset($params['lat'], $params['lng'], $params['parts'], $params['action'])) {
+            return new WP_Error(__METHOD__, "Missing parameters", ['status' => 400]);
+        }
+
+        $params = dt_recursive_sanitize_array($params);
+        if (!is_user_logged_in()) {
+            $this->update_user_logged_in_state($params['sys_type'], $params["parts"]["post_id"]);
+        }
+
+        return DT_Mapbox_API::reverse_lookup($params['lng'], $params['lat']);
     }
 }
