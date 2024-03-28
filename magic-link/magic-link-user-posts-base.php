@@ -411,7 +411,8 @@ abstract class Disciple_Tools_Magic_Links_Magic_User_Posts_Base extends DT_Magic
                 const payload = {
                     action: 'get',
                     parts: jsObject.parts,
-                    lang: jsObject.lang
+                    lang: jsObject.lang,
+                    ts: moment().unix()
                 }
 
                 if (searchWord.length > 0) {
